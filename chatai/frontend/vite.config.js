@@ -8,6 +8,9 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 import { defineConfig } from "vite";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+var rootDir = fileURLToPath(new URL(".", import.meta.url));
 import react from "@vitejs/plugin-react";
 import { configDefaults } from "vitest/config";
 export default defineConfig({
@@ -18,6 +21,14 @@ export default defineConfig({
             "/api": {
                 target: "http://localhost:8000",
                 changeOrigin: true
+            }
+        }
+    },
+    build: {
+        rollupOptions: {
+            input: {
+                main: resolve(rootDir, "index.html"),
+                control: resolve(rootDir, "control-center.html")
             }
         }
     },

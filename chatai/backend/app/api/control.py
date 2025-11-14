@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from math import sin
 from typing import Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -57,7 +57,7 @@ def _build_widgets_payload() -> ControlWidgetResponse:
     ]
 
     payload: dict[str, Any] = {
-        "generated_at": datetime.utcnow(),
+    "generated_at": datetime.now(timezone.utc),
         "metrics": metrics,
         "sparklines": {
             "latency": latency_points,

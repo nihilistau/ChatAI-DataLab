@@ -16,7 +16,7 @@
     "lint:fix": "npm run lint -- --fix",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
-    "storybook:playground": "storybook build --config-dir .storybook --stories \"src/control-center/**/*.stories.@(ts|tsx)\" --output-dir storybook-static-playground"
+    "storybook:playground": "storybook build --config-dir .storybook-playground --output-dir storybook-static-playground"
   },
   "dependencies": {
     "react": "^18.3.1",

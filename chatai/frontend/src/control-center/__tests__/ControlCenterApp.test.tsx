@@ -58,7 +58,7 @@ const notebooksPayload = [
 const logPayload = { service: "backend", lines: ["Booting", "Ready"] };
 
 beforeEach(() => {
-  vi.useFakeTimers();
+  vi.useFakeTimers({ shouldAdvanceTime: true });
   mockFetchControlStatus.mockResolvedValue(statusPayload);
   mockFetchControlWidgets.mockResolvedValue(widgetsPayload);
   mockFetchNotebookJobs.mockResolvedValue(notebooksPayload);
@@ -85,12 +85,12 @@ describe("ControlCenterApp", () => {
 
   it("triggers notebook runs and tails logs", async () => {
     render(<ControlCenterApp />);
-    await screen.findByText(/Notebook monitor/i);
+  await screen.findByText(/Notebook monitor/i);
 
     fireEvent.click(screen.getByRole("button", { name: /Run control_center_playground/i }));
     await waitFor(() => expect(mockTriggerNotebookJob).toHaveBeenCalled());
 
-    vi.advanceTimersByTime(4000);
+  vi.advanceTimersByTime(4000);
     await waitFor(() => expect(mockFetchControlLogs).toHaveBeenCalled());
     expect(screen.getByText(/Booting/)).toBeInTheDocument();
   });

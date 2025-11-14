@@ -1,0 +1,9 @@
+{
+  "prompt_count": 2,
+  "service_states": [
+    "backend (windows): unknown",
+    "frontend (windows): unknown",
+    "datalab (linux): unknown"
+  ],
+  "sample_latency_ms": 0
+}
