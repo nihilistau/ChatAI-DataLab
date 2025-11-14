@@ -1,0 +1,21 @@
+{
+  "hash_algorithm": "sha256",
+  "retain_checkpoints": 10,
+  "backup_root": ".project_integrity/backups",
+  "manifest_path": ".project_integrity/index.json",
+  "checkpoint_dir": ".project_integrity/checkpoints",
+  "include_globs": ["**/*"],
+  "exclude_globs": [
+    ".git/**",
+    "**/.venv/**",
+    "**/node_modules/**",
+    "**/__pycache__/**",
+    "**/.ipynb_checkpoints/**",
+    ".project_integrity/**",
+    "backups/**",
+    "**/*.pyc"
+  ],
+  "default_tags": ["integrity"],
+  "default_milestone": "rolling",
+  "notes": "Edit this file to change hashing behavior or exclusions."
+}

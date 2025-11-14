@@ -1,0 +1,28 @@
+# Python
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.mypy_cache/
+
+# Virtual environments
+.venv/
+**/.venv/
+venv/
+
+# Node artifacts
+**/node_modules/
+**/.parcel-cache/
+**/dist/
+**/build/
+
+# DataLab runtime state
+.labctl/
+backups/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+*storybook.log
+storybook-static
+storybook-static-playground

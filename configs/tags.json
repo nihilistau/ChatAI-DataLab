@@ -1,0 +1,20 @@
+{
+  "tags": [
+    { "name": "backend", "description": "FastAPI services, orchestration glue", "owners": ["backend"] },
+    { "name": "api", "description": "Routers and HTTP endpoints", "owners": ["backend"] },
+    { "name": "models", "description": "SQLAlchemy + Pydantic models", "owners": ["backend"] },
+    { "name": "llm", "description": "LLM clients and adapters", "owners": ["backend"] },
+    { "name": "ops", "description": "Control plane, orchestrators, Ops Deck", "owners": ["platform"] },
+    { "name": "ui", "description": "Frontend components and styles", "owners": ["frontend"] },
+    { "name": "canvas", "description": "Canvas board, artifacts, hypotheses", "owners": ["frontend"] },
+    { "name": "tail-log", "description": "Tail log ingestion and UI", "owners": ["fullstack"] },
+    { "name": "notebook", "description": "Jupyter notebooks", "owners": ["datalab"] },
+    { "name": "metrics", "description": "Analytics helpers, scripts", "owners": ["datalab"] },
+    { "name": "integrity", "description": "Hash/checkpoint tooling", "owners": ["platform"] },
+    { "name": "config", "description": "Configuration manifests/policies", "owners": ["platform"] },
+    { "name": "docs", "description": "Documentation content", "owners": ["docs"] },
+    { "name": "setup", "description": "Installer + bootstrap scripts", "owners": ["platform"] },
+    { "name": "theme", "description": "Theme definitions", "owners": ["frontend"] },
+    { "name": "ops-log", "description": "Ops log/TailLog bridge", "owners": ["platform"] }
+  ]
+}

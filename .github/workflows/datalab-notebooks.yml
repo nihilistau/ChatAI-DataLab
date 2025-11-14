@@ -1,0 +1,79 @@
+name: Full Test Suite
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  tests:
+    name: Backend + DataLab + Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install backend dependencies
+        run: python -m pip install -r chatai/backend/requirements.txt
+
+      - name: Install DataLab dependencies
+        run: python -m pip install -r datalab/requirements.txt
+
+      - name: Backend pytest suite
+        working-directory: chatai/backend
+        run: python -m pytest -q
+
+      - name: Papermill notebook tests
+        run: python -m pytest tests/test_notebooks.py -q
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: chatai/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: chatai/frontend
+        run: npm ci
+
+      - name: Frontend lint
+        working-directory: chatai/frontend
+        run: npm run lint
+
+      - name: Run Vitest unit tests
+        working-directory: chatai/frontend
+        run: npm run test
+
+      - name: Playground widget tests
+        working-directory: chatai/frontend
+        run: npm run test:playground
+
+      - name: Type-check frontend
+        working-directory: chatai/frontend
+        run: npm run build
+
+      - name: Storybook UI build
+        working-directory: chatai/frontend
+        run: npm run storybook:build
+
+      - name: Control Center Storybook build
+        working-directory: chatai/frontend
+        run: npm run storybook:playground
+
+      - name: Upload executed notebooks
+        uses: actions/upload-artifact@v4
+        with:
+          name: papermill-notebooks
+          path: datalab/notebooks/_papermill/*.ipynb
+          if-no-files-found: ignore
