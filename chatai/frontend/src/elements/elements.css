@@ -1,0 +1,74 @@
+.elements-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.elements-grid--two-column {
+  grid-template-columns: 320px 1fr;
+}
+
+.elements-surface {
+  border-radius: 12px;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 10px 35px rgba(15, 23, 42, 0.35);
+}
+
+.elements-surface h3 {
+  margin-top: 0;
+}
+
+.elements-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.elements-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.elements-palette button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  color: #f8fafc;
+  transition: background 0.2s ease;
+}
+
+.elements-palette button:hover {
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.elements-canvas-wrapper {
+  background: #0b1120;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.8);
+  min-height: 480px;
+  position: relative;
+}
+
+.elements-inspector label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: #cbd5f5;
+  gap: 0.25rem;
+}
+
+.elements-inspector input,
+.elements-inspector select,
+.elements-inspector textarea {
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 0.35rem 0.5rem;
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+}

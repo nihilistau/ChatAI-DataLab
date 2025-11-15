@@ -1,5 +1,7 @@
 import type { StorybookConfig } from "@storybook/react-vite";
-import baseConfig from "../.storybook/main";
+// eslint-disable-next-line import/extensions
+// @ts-ignore - Storybook bundler resolves .ts config imports
+import baseConfig from "../.storybook/main.ts";
 
 const config: StorybookConfig = {
   ...baseConfig,

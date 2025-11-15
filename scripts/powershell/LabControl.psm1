@@ -15,6 +15,7 @@ $script:LabControlState["Groups"] = @{
     controlplane= Join-Path $script:LabControlState.Root "controlplane"
     data        = Join-Path $script:LabControlState.Root "data"
 }
+$script:LabControlState["SearchToolkitPath"] = Join-Path $PSScriptRoot "SearchToolkit.psm1"
 
 function Get-LabRoot {
     [CmdletBinding()]
@@ -490,6 +491,9 @@ function Invoke-LabControlCenter {
         "Save-LabWorkspace",
         "Restore-LabWorkspace -ArchivePath backups\\workspace-*.zip -Overwrite",
         "Install-LabDependencies -Target backend",
+        "Invoke-LabSearch -Preset repo-todos",
+        "Get-LabSearchPresets | Format-Table name, description",
+        "Publish-LabRelease -Version 1.0.0 -DryRun",
         "New-LabPackage"
     )
     foreach ($shortcut in $shortcuts) {
@@ -587,6 +591,85 @@ function Find-LabFile {
     return $matchSet
 }
 
+function Get-LabSearchToolkitPath {
+    [CmdletBinding()]
+    param()
+    $path = $script:LabControlState.SearchToolkitPath
+    if (-not (Test-Path $path)) {
+        throw "SearchToolkit.psm1 was not found near LabControl (expected at '$path')."
+    }
+    return (Resolve-Path $path).Path
+}
+
+function Import-LabSearchToolkit {
+    [CmdletBinding()]
+    param()
+    $path = Get-LabSearchToolkitPath
+    $module = Get-Module -Name SearchToolkit -ErrorAction SilentlyContinue
+    if (-not $module -or $module.Path -ne $path) {
+        $module = Import-Module -Name $path -Force -PassThru
+    }
+    return $module
+}
+
+function Get-LabSearchPresets {
+    [CmdletBinding()]
+    param()
+    Import-LabSearchToolkit | Out-Null
+    $config = Get-SearchToolkitConfig
+    return $config.presets
+}
+
+function Invoke-LabSearch {
+    [CmdletBinding(DefaultParameterSetName = 'Preset')]
+    param(
+        [Parameter(ParameterSetName = 'Preset', Mandatory = $true)]
+        [string]$Preset,
+
+        [Parameter(ParameterSetName = 'Pattern', Mandatory = $true)]
+        [string]$Pattern,
+
+        [string[]]$IncludeFiles,
+        [string[]]$ExcludePatterns,
+        [ValidateSet('python','frontend','docs','notebooks','all')]
+        [string[]]$FileProfile,
+        [string]$Root,
+        [switch]$Regex,
+        [switch]$CaseSensitive,
+        [switch]$NoRecurse,
+        [switch]$IncludeVenv,
+        [switch]$IncludeNodeModules,
+        [switch]$IncludeStorybook,
+        [switch]$IncludeGit,
+        [switch]$IncludePyCache,
+        [switch]$DryRun,
+        [switch]$ListFiles,
+        [switch]$EmitStats,
+        [switch]$NoLog
+    )
+
+    Import-LabSearchToolkit | Out-Null
+
+    $forwardKeys = @(
+        'Pattern','Preset','IncludeFiles','ExcludePatterns','FileProfile','Root','Regex','CaseSensitive',
+        'NoRecurse','IncludeVenv','IncludeNodeModules','IncludeStorybook','IncludeGit','IncludePyCache',
+        'DryRun','ListFiles','EmitStats','NoLog'
+    )
+
+    $forward = @{}
+    foreach ($key in $forwardKeys) {
+        if ($PSBoundParameters.ContainsKey($key)) {
+            $forward[$key] = $PSBoundParameters[$key]
+        }
+    }
+
+    if (-not $forward.ContainsKey('Pattern') -and -not $forward.ContainsKey('Preset')) {
+        throw "Invoke-LabSearch requires -Pattern or -Preset."
+    }
+
+    return Invoke-RepoSearch @forward
+}
+
 function Get-LabFolderSnapshot {
     [CmdletBinding()]
     param(
@@ -668,6 +751,97 @@ function Test-LabFolderSnapshot {
         CurrentDigest  = $current.Digest
         Matches        = ($raw.Digest -eq $current.Digest) -and (-not $diff)
         Differences    = $diff
+    }
+}
+
+function Publish-LabRelease {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)][string]$Version,
+        [switch]$Push,
+        [switch]$Force,
+        [switch]$DryRun,
+        [switch]$SkipIntegrity,
+        [string]$Branch = "main",
+        [string]$TagMessage
+    )
+
+    $root = Get-LabRoot
+    $gitPath = Get-LabExecutablePath -Names @("git") -Require
+    $pythonCmd = Get-LabPythonCommand
+
+    $tagName = if ($Version -like "v*") { $Version } else { "v$Version" }
+    if (-not $TagMessage) {
+        $TagMessage = "Framework $tagName"
+    }
+
+    $preflightIssues = @()
+
+    Push-Location $root
+    try {
+        $currentBranch = (& $gitPath rev-parse --abbrev-ref HEAD).Trim()
+        if ($currentBranch -ne $Branch) {
+            $preflightIssues += "Current branch '$currentBranch' differs from required '$Branch'"
+        }
+
+        $statusOutput = & $gitPath status --porcelain
+        $dirtyEntries = @($statusOutput | Where-Object { $_ -match '^(\?\?|[MADRCU ]{2})' })
+        if ($dirtyEntries.Count -gt 0) {
+            $preflightIssues += "Working tree has $($dirtyEntries.Count) change(s)"
+        }
+
+        if (-not $SkipIntegrity) {
+            & $pythonCmd scripts/project_integrity.py status
+            $integrityExit = $LASTEXITCODE
+            if ($integrityExit -ne 0) {
+                $preflightIssues += "project_integrity.py status exited with $integrityExit"
+            }
+        }
+
+        $existingTag = (& $gitPath tag -l $tagName)
+        if ($existingTag) {
+            $preflightIssues += "Tag $tagName already exists"
+        }
+
+        if ($DryRun) {
+            return [pscustomobject]@{
+                Tag          = $tagName
+                Branch       = $currentBranch
+                Push         = [bool]$Push
+                IntegrityRan = (-not $SkipIntegrity)
+                DirtyFiles   = $dirtyEntries.Count
+                ExistingTag  = [bool]$existingTag
+                Issues       = $preflightIssues
+            }
+        }
+
+        if ($preflightIssues.Count -gt 0 -and -not $Force) {
+            $message = "Release preflight failed:`n - " + ($preflightIssues -join "`n - ")
+            throw $message
+        }
+
+        if ($existingTag -and $Force) {
+            & $gitPath tag -d $tagName | Out-Null
+        }
+
+        if ($PSCmdlet.ShouldProcess($tagName, "Create git tag")) {
+            & $gitPath tag -a $tagName -m $TagMessage
+        }
+
+        if ($Push -and $PSCmdlet.ShouldProcess("origin", "Push $tagName and $Branch")) {
+            & $gitPath push origin $Branch
+            & $gitPath push origin $tagName
+        }
+
+        return [pscustomobject]@{
+            Tag     = $tagName
+            Branch  = $currentBranch
+            Pushed  = [bool]$Push
+            Message = $TagMessage
+        }
+    }
+    finally {
+        Pop-Location
     }
 }
 

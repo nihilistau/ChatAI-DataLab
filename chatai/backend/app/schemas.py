@@ -226,3 +226,91 @@ class NotebookJobRead(APIModel):
 class NotebookRunRequest(APIModel):
     name: str = Field(..., min_length=5, pattern=r".*\.ipynb$")
     parameters: dict[str, Any] = Field(default_factory=dict)
+
+
+# --- Elements schemas -------------------------------------------------------
+class GraphEdgeEndpoint(APIModel):
+    node: str
+    port: str
+
+
+class GraphEdge(APIModel):
+    id: str
+    source: GraphEdgeEndpoint = Field(..., alias="from")
+    target: GraphEdgeEndpoint = Field(..., alias="to")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class GraphNode(APIModel):
+    id: str
+    type: str
+    label: str
+    props: dict[str, Any] = Field(default_factory=dict)
+    position: dict[str, float] = Field(default_factory=dict)
+
+
+class GraphMetadata(APIModel):
+    tags: list[str] | None = None
+    created_by: Optional[str] = Field(default=None, alias="createdBy")
+    updated_at: Optional[str] = None
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class GraphPayload(APIModel):
+    name: str
+    tenant_id: str = Field(..., alias="tenantId")
+    workspace_id: str = Field(..., alias="workspaceId")
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+    metadata: Optional[GraphMetadata] = None
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class GraphCreateRequest(GraphPayload):
+    pass
+
+
+class GraphUpdateRequest(GraphPayload):
+    pass
+
+
+class GraphRead(GraphPayload):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class NodeOverride(APIModel):
+    props: dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphRunRequest(APIModel):
+    overrides: dict[str, NodeOverride] = Field(
+        default_factory=dict,
+        description="Optional map of nodeId -> property overrides applied just for this run",
+    )
+
+
+GraphRunStatus = Literal["queued", "succeeded", "failed"]
+
+
+class GraphNodeTrace(APIModel):
+    id: str
+    type: str
+    inputs: dict[str, Any]
+    outputs: dict[str, Any]
+    props: dict[str, Any]
+
+
+class GraphRunRead(APIModel):
+    id: str
+    graph_id: str
+    status: GraphRunStatus
+    created_at: datetime
+    completed_at: datetime
+    outputs: dict[str, Any]
+    trace: list[GraphNodeTrace]
+    error: Optional[str] = None

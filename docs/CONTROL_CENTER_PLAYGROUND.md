@@ -108,3 +108,11 @@ Each widget is an independent React component with a dedicated Storybook story a
 - [x] CI workflow updates + launch instructions in README.
 
 Once all boxes are checked, the repo ships with a fully automated control center that spans backend, frontend, notebooks, and tooling.
+
+---
+
+## 8. Elements Canvas Preview
+
+- The Control Center now embeds the **Elements** workbench—a drag-and-drop node scaffold powered by a shared registry and Zustand store located in `src/elements/`.
+- The preview lets you explore the prompt → LLM → notebook preset, tweak parameters, and connect additional nodes before the backend executor lands.
+- Storybook ships the same canvas under `Elements/Workbench`, and the full architecture/spec is tracked in `docs/ELEMENTS_SPEC.md` so backend + notebook engineers can implement their halves without deviating from the contract.

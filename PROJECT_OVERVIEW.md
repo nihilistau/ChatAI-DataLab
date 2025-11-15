@@ -1,10 +1,51 @@
 # ChatAI + DataLab — Project Overview
 
-This document captures the end-to-end plan for the ChatAI data-capture experience and the DataLab insight environment. It is written for a solo developer who wants a pragmatic, GitHub-first workflow that can be reproduced on any VS Code instance—local or remote.
+> **Milestone:** Framework v1.0.0 (Complete)  
+> **Snapshot:** 2025-11-15 14:00 UTC  
+> **Status:** Fully working capture + analysis framework. New additions are logged in `docs/GOALS_AND_ACHIEVEMENTS.md` and mirrored in the “Expanded Functionality” table below.
+
+<!-- Snapshot recorded: 2025-11-15T14:00:00Z -->
+
+This document captures the completed ChatAI capture pipeline and DataLab insight environment. Treat it as the authoritative description of what exists today—structure, commands, and feature set. Future enhancements must be documented as dated entries before they graduate into this file.
+
+## Expanded Functionality
+
+| Date (UTC) | Feature | Components | Notes |
+| --- | --- | --- | --- |
+| 2025-11-15 | Repo-wide PowerShell Search Toolkit | `scripts/powershell/SearchToolkit.psm1`, `scripts/powershell/search-presets.json`, `scripts/powershell/examples/find-todos.ps1` | Adds reusable presets, JSONL logging, and dry-run stats for observability-ready code sweeps. |
+| 2025-11-15 | LabControl Search Proxy | `scripts/powershell/LabControl.psm1`, `scripts/lab-control.ps1` | LabControl can now run any preset via `-SearchPreset` / `-SearchPattern`, keeping Windows + Linux ops flows aligned. |
+| 2025-11-15 | Release Automation Helper | `scripts/powershell/LabControl.psm1`, `scripts/lab-control.ps1`, `docs/RELEASE_CHECKLIST.md` | `Publish-LabRelease` runs integrity, tagging, and optional pushes (with `-DryRun` support) so Framework releases stay reproducible. |
 
 ---
+## Overview ##
 
-## 1. Vision & Objectives
+## IMPORTANT ##
+## SYSTEM PROMPT ##
+
+Everything Here has been achieved. We need to set new goals and document them here in expanded goals.
+Expanded goals are to be written in the same style as the rest of the document.
+We need to consider this complete and accurate. A completed work as the foundation for future improvements.
+And we need to document the achieved objectives as well. We need to make sure the achieved objectives are clearly stated. Re-write them as
+more of a complete list and overview  of the current features, tweak this file to reflect that.
+it's the overview, feature set. Description of how it's structured. The purpose, Commands, etc.
+Keep it mostly the way it is but make it more obvious its a description of the system.
+Set a date and a time tag or a comment section that explains Date and time written.
+A version. or milestone version. This should be renamed or restricted to only implemented features.
+Use another new file for goals and acievments and think of this as A version feature list.
+it should be versioned and updated. strictly following the rules established.
+I have made a few small changes, take my lead. You will need to make a section in here at the top.
+that will be called expanded functionality. or upgrades. AS YOU PUT AN ENTRY IN THE EXPANDED GOALS
+SECTION. YOU MUST ALSO UPDATE THE TAGS FILE TO ADD ANY NEW TAGS. WRITE ALL NEW FUNCTIONALITY AND 
+FUNCTIONS YOU ADD TO THE PROJECT IN THE EXPANDED GOALS SECTION. And then at some point you will
+have to rewrite this expanding and clarifying. Just make sure anything written in here is real and
+working. No plans or ideas. Only real things that are done. If you add a new | Layer      | Responsibilities | Key Tech |
+than add it here under the others, do this for everything. from here on out. versioning on all changes
+should be done at all times
+
+## END IMPORTANT ##
+
+
+## 1. Libraries Purpose
 
 - **Reliable data capture**: Instrument every user prompt to record raw text, cadence, pauses, and edit history without slowing the UI.
 - **Unified storage**: Persist structured conversations plus metadata in a portable SQLite database that can later be upgraded to Postgres or Cosmos DB.
@@ -56,6 +97,12 @@ ChatAI-DataLab/
 
 ## 4. ChatAI — Data Acquisition Stack
 
+### Status snapshot (Framework v1.0.0 · Nov 2025)
+
+- ✅ **Frontend instrumentation shipped** — `chatai/frontend/src/components/PromptRecorder.tsx` records keystrokes, pauses, snapshots, and submits a single `/api/chat` payload with optimistic UI updates.
+- ✅ **FastAPI storage + relay live** — `POST /api/chat` in `chatai/backend/app/api/routes.py` persists interactions via the SQLAlchemy models in `app/models.py`, captures metadata/LLM output, and returns latency stats.
+- ✅ **Repo hygiene enforced** — Automated sweeps via the Search Toolkit confirm no first-party `TODO` or "unimplemented" markers remain; any new TODOs require justification + ticket references.
+
 ### 4.1 Frontend Instrumentation
 
 - **Framework**: SvelteKit (preferred) or React + Vite for quick SSR, routing, and TypeScript support.
@@ -90,7 +137,7 @@ ChatAI-DataLab/
 
 ### 4.3 Database Considerations
 
-- Start with SQLite under `data/interactions.db` for zero-config; ensure the file lives on a mounted volume so Docker, local dev, and remote VMs share the same data.
+- Already Started with SQLite under `data/interactions.db` for zero-config; ensure the file lives on a mounted volume so Docker, local dev, and remote VMs share the same data.
 - Keep items < 2 MB to ensure easy migration to Cosmos DB or PostgreSQL later; store large assets (audio, images) by reference (blob URLs, Drive links).
 - Future-proof with partition-friendly identifiers (e.g., `tenantId:userId:sessionId`).
 
@@ -123,6 +170,12 @@ List to pin in `datalab/requirements.txt`:
 3. **Feature engineering**: explode keystrokes/pause arrays, compute WPM, hesitation counts, etc.
 4. **Visualization**: build static charts (Matplotlib/Seaborn) or interactive dashboards (Plotly) showing pause heatmaps, average typing speed vs. response quality, etc.
 5. **Packaging insights**: store reusable helpers inside `datalab/scripts/` (e.g., `metrics.py`, `visuals.py`) and import them into notebooks to stay DRY.
+
+### 5.3 Elements Templates
+
+- `datalab/scripts/elements.py` centralizes sample graph presets plus helpers for summarizing, validating, and simulating Elements DAGs in pure Python.
+- Two Papermill-friendly notebooks — `elements_playground.ipynb` and `elements_reporting.ipynb` — now live under `datalab/notebooks/` to demonstrate graph inspection, dry-run execution, and report generation that mirrors the backend `/api/elements` service.
+- Both notebooks default to local presets but can accept overrides/graph IDs via Papermill parameters, keeping the Control Center UI, backend API, and notebook workflows aligned.
 
 ## 6. Deployment & Automation
 
@@ -210,15 +263,11 @@ Key commands (each proxies to standard `Start-Job` / `Stop-Job` primitives but m
 
 `Invoke-LabControlCenter` renders an at-a-glance dashboard showing job status plus the most useful commands so you can treat the PowerShell terminal like a mini operations console from inside VS Code. When you need to interact with Linux copies of the project from Windows, run `Invoke-LabUnixControl status` (optionally `-Distribution Ubuntu-22.04`) to proxy any Bash command through WSL, or call `Invoke-LabUnixControl start-all` to spin up the entire stack without leaving PowerShell.
 
-## 7. Operational Notes & Roadmap
+## 7. Operational Practices & Change Tracking
 
-1. **Security & secrets**: store API keys in `.env` files loaded by FastAPI and never check them into GitHub. For multi-tenant deployments consider Azure Key Vault or AWS Secrets Manager.
-2. **Testing**: add component tests for the input recorder, FastAPI payload validation, and SQLAlchemy persistence. Provide smoke notebooks verifying schema assumptions.
-3. **Observability**: enable structured logging (JSON) and capture Cosmos DB / LLM diagnostics for latency analysis.
-4. **Future enhancements**:
-	- Add WebSocket streaming for real-time AI responses.
-	- Promote SQLite to a managed database when RU/s or size exceeds limits.
-	- Create a reusable Python package inside `datalab/` for metrics so notebooks stay lightweight.
-	- Ship templated Jupyter notebooks (e.g., "interaction summary", "pause heatmap", "prompt rewrite tree").
+1. **Secrets management**: Store API keys in repo-local `.env` files that FastAPI and notebooks consume via `python-dotenv`. Never commit secrets; production deployments should source them from managed vaults (Azure Key Vault, AWS Secrets Manager, etc.).
+2. **Test + notebook parity**: `chatai/backend/tests` and `datalab/tests` provide regression coverage for the recorder payload, FastAPI schema validation, metrics helpers, and Papermill notebooks. Extend these suites before modifying public endpoints or notebook contracts.
+3. **Observability hooks**: Structured logging, the Search Toolkit presets, and `logs/search-history.jsonl` form the baseline telemetry story. Invoke `Get-SearchHistory` or the LabControl search proxy to audit repo hygiene before every milestone cut.
+4. **Change documentation**: Every shipped addition must (a) add a dated entry to the “Expanded Functionality” table above, (b) append a record to `docs/GOALS_AND_ACHIEVEMENTS.md`, and (c) update relevant tags/configs. Ideas that are not yet implemented stay out of this file.
 
-With this plan in place, you can confidently spin up the repo on any machine, capture rich prompt telemetry, and immediately explore it in DataLab without context switching.
+With the framework baseline locked, this overview now functions as the source of truth for what is production-ready. Treat any future edits as release notes for implemented work only.

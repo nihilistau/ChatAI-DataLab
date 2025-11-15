@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.control import router as control_router
+from app.api.elements import router as elements_router
 from app.api.routes import router as chat_router
 from app.config import get_settings
 from app.database import Base, get_engine
@@ -43,6 +44,7 @@ app.add_middleware(
 # --- Routers ------------------------------------------------------------------
 app.include_router(chat_router, prefix="/api")
 app.include_router(control_router, prefix="/api")
+app.include_router(elements_router, prefix="/api")
 
 
 # --- Diagnostics --------------------------------------------------------------

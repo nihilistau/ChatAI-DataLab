@@ -5,6 +5,7 @@ import { ServiceGrid } from "./components/ServiceGrid";
 import { NotebookMonitor } from "./components/NotebookMonitor";
 import { CommandConsole } from "./components/CommandConsole";
 import { TailLogViewer } from "./components/TailLogViewer";
+import { ElementsPanel } from "./components/ElementsPanel";
 import "./styles.css";
 
 const formatUpdated = (timestamp: number | null) => (timestamp ? new Date(timestamp).toLocaleTimeString() : "—");
@@ -38,6 +39,7 @@ export const ControlCenterShell: React.FC = () => {
         <CommandConsole />
         <TailLogViewer />
       </div>
+      <ElementsPanel />
     </main>
   );
 };

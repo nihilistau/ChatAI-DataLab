@@ -67,6 +67,8 @@ def _create_sample_db(db_path: Path) -> None:
         "quickstart.ipynb",
         "hypothesis_control.ipynb",
         "control_center_playground.ipynb",
+        "elements_playground.ipynb",
+        "elements_reporting.ipynb",
     ],
 )
 def test_notebooks_execute(notebook_name: str, tmp_path: Path) -> None:

@@ -89,3 +89,54 @@ This pairing gives you quick iteration (PowerShell snapshot) plus tamper-proof m
 - New jobs: add entries to `Get-LabJobDefinitions` (PowerShell) **and** `register_job` blocks in `scripts/labctl.sh` so both shells stay aligned.
 - Custom snapshots: wrap `Get-LabFolderSnapshot` in higher-level functions but keep the object shape `{ RelativePath, Length, Hash }` so downstream tooling keeps working.
 - Document every new command sequence by appending to this file—future agents rely on it to rediscover operational muscle memory quickly.
+
+## 6. Search Toolkit & observability shortcuts
+
+Repeatedly retyping ad-hoc `Get-ChildItem` + `Select-String` commands is error-prone, so the repo now includes a lightweight PowerShell module and preset catalog for common searches (TODO sweeps, "unimplemented" audits, doc scans, etc.). The module also emits structured logs so we can observe search activity over time.
+
+### 6.1 Loading the module
+
+```powershell
+Import-Module "$PSScriptRoot\scripts\powershell\SearchToolkit.psm1" -Force
+```
+
+### 6.2 Single-shot searches
+
+```powershell
+# Literal match (default), scoped to Python + TS/JS/Markdown
+Invoke-RepoSearch -Pattern "TODO" -FileProfile python,frontend,docs
+
+# Regex search, include notebooks, keep vendor directories
+Invoke-RepoSearch -Pattern "http(s)?://" -Regex -FileProfile notebooks -IncludeVenv -IncludeNodeModules
+
+# Dry run to preview filters without executing Select-String
+Invoke-RepoSearch -Preset repo-todos -DryRun
+```
+
+Key switches mimic CLI flags you might expect elsewhere:
+
+| Switch | Effect |
+| --- | --- |
+| `-FileProfile` | Shortcut for curated extension sets defined in `scripts/powershell/search-presets.json` (`python`, `frontend`, `docs`, `notebooks`, `all`). |
+| `-IncludeVenv`, `-IncludeNodeModules`, `-IncludeStorybook`, `-IncludeGit`, `-IncludePyCache` | Opt back into directories that are excluded by default. |
+| `-Preset <name>` | Replays a saved preset (`repo-todos`, `docs-todos`, `backend-unimplemented`, or any new entries you add to the JSON). |
+| `-EmitStats` | (On by default.) Prints a summary table with file counts, match counts, and runtime in milliseconds. |
+| `-ListFiles` | Returns the candidate file set instead of running `Select-String`. |
+| `-NoLog` | Skips observability logging for the run. |
+
+### 6.3 Presets & history
+
+- Presets live in `scripts/powershell/search-presets.json`. Each entry documents the include/exclude filters plus the original raw command that inspired it.
+- Current catalog: `repo-todos`, `docs-todos`, `backend-unimplemented`, `frontend-debug-logs`, `backend-print-debug`, `security-http-links`, and `tests-skip-markers`. Keep naming descriptive so LabControl surfaces stay readable.
+- Every invocation writes a JSON line into `logs/search-history.jsonl` (create the `logs` directory if it does not exist). Use `Get-SearchHistory -Last 10` to inspect recent runs or `Get-SearchHistory -Raw` for raw JSON.
+- Extend the catalog by appending new objects to the `presets` array or by referencing the `extensionSets` shortcuts for language-specific searches.
+- The `scripts/lab-control.ps1` entrypoint now proxies searches: e.g. `pwsh -File scripts/lab-control.ps1 -SearchPreset repo-todos -EmitStats`. This loads `LabControl.psm1`, which exposes `Invoke-LabSearch` and `Get-LabSearchPresets` for interactive shells.
+
+This shared toolkit lets every agent grab a battle-tested command (`Invoke-RepoSearch`) instead of recreating bespoke `Select-String` pipelines, while the log stream adds the observability hook we were missing.
+
+## 7. Release automation helper
+
+- Use `Publish-LabRelease -Version 1.0.0 -DryRun` to see whether the repo is clean, the integrity check passes, and if a tag already exists.
+- Add `-ReleasePush`/`-Push` to actually run `git push origin main` plus the annotated tag once the checks succeed.
+- `-Force` overrides dirty working trees or existing tags (use sparingly), while `-SkipIntegrity` is available when `project_integrity.py status` is intentionally bypassed.
+- The `scripts/lab-control.ps1` entrypoint surfaces the same functionality: `pwsh -File scripts/lab-control.ps1 -ReleaseVersion 1.0.0 -ReleaseDryRun`.

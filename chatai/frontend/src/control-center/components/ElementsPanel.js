@@ -1,0 +1,3 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { ElementsWorkbench } from "../../elements";
+export const ElementsPanel = () => (_jsxs("section", { className: "control-card", children: [_jsx("header", { className: "control-card__header", children: _jsxs("div", { children: [_jsx("p", { style: { margin: 0, color: "var(--control-muted)", textTransform: "uppercase", fontSize: "0.85rem" }, children: "Elements" }), _jsx("h2", { style: { margin: 0 }, children: "Node builder preview" }), _jsx("span", { style: { color: "var(--control-muted)", fontSize: "0.85rem" }, children: "Draft implementation of the Elements canvas powered by the shared widget registry." })] }) }), _jsx(ElementsWorkbench, {})] }));

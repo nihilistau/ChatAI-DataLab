@@ -1,0 +1,116 @@
+{
+  "defaults": {
+    "root": "..\\..",
+    "includeFiles": ["*.py", "*.ts", "*.tsx", "*.md", "*.js"],
+    "excludePatterns": [
+      "\\\\.venv",
+      "datalab\\\\venv",
+      "node_modules",
+      "storybook",
+      "__pycache__",
+      "\\\\.git"
+    ],
+    "recursive": true
+  },
+  "extensionSets": {
+    "python": ["*.py"],
+    "frontend": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+    "docs": ["*.md"],
+    "notebooks": ["*.ipynb"],
+    "all": ["*"]
+  },
+  "presets": [
+    {
+      "name": "repo-todos",
+      "description": "Search the entire repo for TODO markers across Python, TypeScript, JavaScript, and Markdown files while skipping vendor directories.",
+      "pattern": "TODO",
+      "matchMode": "simple",
+      "includeFiles": ["*.py", "*.ts", "*.tsx", "*.md", "*.js"],
+      "excludePatterns": ["\\\\.venv", "datalab\\\\venv", "node_modules", "storybook", "__pycache__", "\\\\.git"],
+      "root": "..\\..",
+      "recursive": true,
+      "tags": ["todo", "code-health"],
+      "history": [
+        "Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch \"datalab\\\\venv\" -and $_.FullName -notmatch \"\\\\.git\" } | Select-String -Pattern \"TODO\""
+      ]
+    },
+    {
+      "name": "docs-todos",
+      "description": "Scan Markdown docs for TODO markers.",
+      "pattern": "TODO",
+      "matchMode": "simple",
+      "includeFiles": ["*.md"],
+      "root": "..\\..\\docs",
+      "recursive": true,
+      "tags": ["todo", "docs"],
+      "history": [
+        "cd \"d:/Files/Code 3/ChatAI-DataLab\"; $files = Get-ChildItem -Path docs -Include *.md -Recurse -File; if($files){ $files | Select-String -Pattern \"TODO\" }"
+      ]
+    },
+    {
+      "name": "backend-unimplemented",
+      "description": "Look for the term 'unimplemented' throughout the backend to ensure no missing features remain.",
+      "pattern": "unimplemented",
+      "matchMode": "simple",
+      "includeFiles": ["*.py"],
+      "root": "..\\..",
+      "recursive": true,
+      "tags": ["backend", "unimplemented"],
+      "history": [
+        "cd \"d:/Files/Code 3/ChatAI-DataLab\"; Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch \"datalab\\\\venv\" -and $_.FullName -notmatch \"\\\\.git\" } | Select-String -Pattern \"unimplemented\""
+      ]
+    },
+    {
+      "name": "frontend-debug-logs",
+      "description": "Find console.log statements or debugger calls inside the frontend source tree before shipping builds.",
+      "pattern": "console\\.log|debugger",
+      "matchMode": "regex",
+      "includeFiles": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+      "root": "..\\..\\chatai\\frontend\\src",
+      "recursive": true,
+      "tags": ["frontend", "debug", "cleanup"],
+      "history": [
+        "cd \"d:/Files/Code 3/ChatAI-DataLab/chatai/frontend\"; Get-ChildItem -Path src -Recurse -Include *.ts,*.tsx,*.js,*.jsx | Select-String -Pattern \"console\\\\.log|debugger\""
+      ]
+    },
+    {
+      "name": "backend-print-debug",
+      "description": "Locate stray print() debugging statements across the FastAPI backend.",
+      "pattern": "print\\(",
+      "matchMode": "regex",
+      "includeFiles": ["*.py"],
+      "root": "..\\..\\chatai\\backend",
+      "recursive": true,
+      "tags": ["backend", "debug", "cleanup"],
+      "history": [
+        "cd \"d:/Files/Code 3/ChatAI-DataLab/chatai/backend\"; Get-ChildItem -Recurse -Include *.py | Select-String -Pattern \"print\\\\(\""
+      ]
+    },
+    {
+      "name": "security-http-links",
+      "description": "Sweep for hard-coded http:// links that should be upgraded to https or configuration.",
+      "pattern": "http://",
+      "matchMode": "simple",
+      "includeFiles": ["*.py", "*.ts", "*.tsx", "*.js", "*.md", "*.json"],
+      "root": "..\\..",
+      "recursive": true,
+      "tags": ["security", "links", "hardening"],
+      "history": [
+        "cd \"d:/Files/Code 3/ChatAI-DataLab\"; Get-ChildItem -Recurse -Include *.py,*.ts,*.tsx,*.js,*.md,*.json | Select-String -Pattern \"http://\" -SimpleMatch"
+      ]
+    },
+    {
+      "name": "tests-skip-markers",
+      "description": "Highlight pytest skip markers so we can un-skip once issues close.",
+      "pattern": "@pytest\\.mark\\.skip|pytest\\.skip",
+      "matchMode": "regex",
+      "includeFiles": ["test_*.py", "*.py"],
+      "root": "..\\..",
+      "recursive": true,
+      "tags": ["tests", "skip", "qa"],
+      "history": [
+        "cd \"d:/Files/Code 3/ChatAI-DataLab\"; Get-ChildItem -Recurse -Include test_*.py,*.py | Select-String -Pattern \"@pytest\\\\.mark\\\\.skip|pytest\\\\.skip\""
+      ]
+    }
+  ]
+}
