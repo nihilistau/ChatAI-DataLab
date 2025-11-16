@@ -19,3 +19,4 @@ rich
 papermill
 nbclient
 nbformat
+pydantic

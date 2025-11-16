@@ -60,6 +60,38 @@ function Get-LabUnixScriptPath {
     return $scriptPath
 }
 
+function Get-LabDiagnosticsDirectory {
+    $dir = Join-Path (Get-LabRoot) "data\logs"
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+    return $dir
+}
+
+function Get-LabDiagnosticsPath {
+    param([string]$Name = "lab-diagnostics.jsonl")
+    return Join-Path (Get-LabDiagnosticsDirectory) $Name
+}
+
+function Write-LabDiagnosticRecord {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Category,
+        [Parameter(Mandatory)][string]$Message,
+        [hashtable]$Data
+    )
+    $record = [ordered]@{
+        timestamp = (Get-Date).ToString('o')
+        category  = $Category
+        message   = $Message
+        data      = $Data ?? @{}
+    }
+    $json = $record | ConvertTo-Json -Depth 10
+    $path = Get-LabDiagnosticsPath
+    $json | Out-File -FilePath $path -Encoding utf8 -Append
+    return $path
+}
+
 function ConvertTo-WslPath {
     param([Parameter(Mandatory)][string]$Path)
     $wsl = Get-Command wsl.exe -ErrorAction SilentlyContinue
@@ -264,7 +296,9 @@ function Start-LabJob {
     }
 
     if ($PSCmdlet.ShouldProcess($Name, "Start job")) {
-        return Start-Job -Name $jobName -InitializationScript { Set-StrictMode -Version Latest } -ScriptBlock $sb -ArgumentList $script
+        $job = Start-Job -Name $jobName -InitializationScript { Set-StrictMode -Version Latest } -ScriptBlock $sb -ArgumentList $script
+        Write-LabDiagnosticRecord -Category 'lab-job' -Message 'Job started' -Data @{ name = $Name; command = $script.Command }
+        return $job
     }
 }
 
@@ -280,13 +314,14 @@ function Stop-LabJob {
         Write-Verbose "Job $Name not found"
         return
     }
-    if ($PSCmdlet.ShouldProcess($Name, "Stop job")) {
-      if ($Force) {
-        Stop-Job -Job $job -Force -ErrorAction SilentlyContinue
-      } else {
-        Stop-Job -Job $job -ErrorAction SilentlyContinue
-      }
-    }
+        if ($PSCmdlet.ShouldProcess($Name, "Stop job")) {
+            if ($Force) {
+                Stop-Job -Job $job -Force -ErrorAction SilentlyContinue
+            } else {
+                Stop-Job -Job $job -ErrorAction SilentlyContinue
+            }
+            Write-LabDiagnosticRecord -Category 'lab-job' -Message 'Job stopped' -Data @{ name = $Name; forced = [bool]$Force }
+        }
 }
 
 function Restart-LabJob {
@@ -335,6 +370,31 @@ function Show-LabJobs {
         return
     }
     $jobs | Select-Object Name, State, HasMoreData, PSBeginTime, PSEndTime | Format-Table -AutoSize
+}
+
+function Test-LabHealth {
+    [CmdletBinding()]
+    param(
+        [string]$StatusUrl = "http://localhost:8000/api/control/status",
+        [switch]$Json
+    )
+    $root = Get-LabRoot
+    $python = Get-LabPythonCommand
+    $scriptPath = Join-Path $root "scripts\control_health.py"
+    if (-not (Test-Path $scriptPath)) {
+        throw "control_health.py not found at $scriptPath"
+    }
+    $arguments = @($scriptPath, '--status-url', $StatusUrl)
+    if ($Json) { $arguments += '--json' }
+    $env:LAB_ROOT = $root
+    & $python @arguments
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -eq 0) {
+        Write-LabDiagnosticRecord -Category 'healthcheck' -Message 'Lab health verified' -Data @{ statusUrl = $StatusUrl }
+    } else {
+        Write-LabDiagnosticRecord -Category 'healthcheck' -Message 'Lab health degraded' -Data @{ statusUrl = $StatusUrl; exitCode = $exitCode }
+        throw "Health check failed with exit code $exitCode"
+    }
 }
 
 function Get-LabJobSnapshot {
@@ -491,6 +551,7 @@ function Invoke-LabControlCenter {
         "Save-LabWorkspace",
         "Restore-LabWorkspace -ArchivePath backups\\workspace-*.zip -Overwrite",
         "Install-LabDependencies -Target backend",
+        "List-Commands -Status succeeded -Limit 5",
         "Invoke-LabSearch -Preset repo-todos",
         "Get-LabSearchPresets | Format-Table name, description",
         "Publish-LabRelease -Version 1.0.0 -DryRun",
@@ -510,6 +571,67 @@ function Invoke-LabControlCenter {
         Write-Host $example
     }
 }
+
+function List-LabCommands {
+    [CmdletBinding()]
+    param(
+        [string]$ApiUrl = "http://localhost:8000/api/commands",
+        [string]$StorePath = "data\\commands.json",
+        [ValidateSet("never-run","running","succeeded","failed")]
+        [string]$Status,
+        [string]$Tag,
+        [ValidateRange(1,500)]
+        [int]$Limit = 50,
+        [switch]$Raw
+    )
+
+    $root = Get-LabRoot
+    $query = @{}
+    if ($Status) { $query.status = $Status }
+    if ($Tag) { $query.tag = $Tag }
+    if ($Limit) { $query.limit = [string]$Limit }
+
+    $uri = $ApiUrl
+    if ($query.Count -gt 0) {
+        $qs = ($query.GetEnumerator() | ForEach-Object {
+                '{0}={1}' -f $_.Key, [System.Uri]::EscapeDataString($_.Value)
+            }) -join '&'
+        if ($uri -match '\?') {
+            $uri = "$uri&$qs"
+        } else {
+            $uri = "$uri?$qs"
+        }
+    }
+
+    $data = $null
+    try {
+        $data = Invoke-RestMethod -Uri $uri -Method Get -TimeoutSec 5
+    } catch {
+        $store = Join-Path $root $StorePath
+        if (-not (Test-Path $store)) {
+            throw "Unable to query $uri and fallback store '$store' was not found. Error: $($_.Exception.Message)"
+        }
+        $data = Get-Content -Raw -Path $store | ConvertFrom-Json
+        if ($Status) {
+            $data = $data | Where-Object { $_.last_status -eq $Status }
+        }
+        if ($Tag) {
+            $needle = $Tag.ToLowerInvariant()
+            $data = $data | Where-Object { $_.tags -and ($_.tags | ForEach-Object { $_.ToLowerInvariant() }) -contains $needle }
+        }
+        if ($Limit) {
+            $data = $data | Select-Object -Last $Limit
+        }
+    }
+
+    if ($Raw) {
+        return $data
+    }
+
+    return $data | Select-Object id, label, command, last_status, last_run_at, tags
+}
+
+Set-Alias -Name List-Commands -Value List-LabCommands
 
 function Get-LabExecutablePath {
     [CmdletBinding()]
@@ -754,23 +876,377 @@ function Test-LabFolderSnapshot {
     }
 }
 
+function Get-LabLatestVersionTag {
+    [CmdletBinding()]
+    param()
+
+    $gitPath = Get-LabExecutablePath -Names @("git") -Require -ErrorAction Stop
+    $root = Get-LabRoot
+    Push-Location $root
+    try {
+        $tags = & $gitPath tag -l "v*"
+    }
+    finally {
+        Pop-Location
+    }
+
+    $versions = @()
+    foreach ($tag in $tags) {
+        if (-not $tag) { continue }
+        if ($tag -match '^v?(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$') {
+            $versions += [pscustomobject]@{
+                Tag   = if ($tag -like 'v*') { $tag } else { "v$tag" }
+                Major = [int]$Matches.major
+                Minor = [int]$Matches.minor
+                Patch = [int]$Matches.patch
+            }
+        }
+    }
+
+    if (-not $versions -or $versions.Count -eq 0) {
+        return [pscustomobject]@{ Tag = "v0.0.0"; Major = 0; Minor = 0; Patch = 0 }
+    }
+
+    return ($versions | Sort-Object -Property Major, Minor, Patch | Select-Object -Last 1)
+}
+
+function Resolve-LabReleaseVersion {
+    [CmdletBinding()]
+    param(
+        [string]$Version,
+        [ValidateSet('patch','minor','major')]
+        [string]$Bump
+    )
+
+    if ($Version) {
+        return $Version
+    }
+
+    if (-not $Bump) {
+        throw "Provide -Version or -Bump to determine the release tag."
+    }
+
+    $latest = Get-LabLatestVersionTag
+    $major = $latest.Major
+    $minor = $latest.Minor
+    $patch = $latest.Patch
+
+    switch ($Bump) {
+        'major' {
+            $major += 1
+            $minor = 0
+            $patch = 0
+        }
+        'minor' {
+            $minor += 1
+            $patch = 0
+        }
+        default {
+            $patch += 1
+        }
+    }
+
+    return "{0}.{1}.{2}" -f $major, $minor, $patch
+}
+
+function Update-LabChangelog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Version,
+        [Parameter(Mandatory)][string]$ChangelogPath,
+        [string]$TemplatePath,
+        [string[]]$Sections
+    )
+
+    if (-not (Test-Path $ChangelogPath)) {
+        throw "CHANGELOG not found at $ChangelogPath"
+    }
+
+    $date = Get-Date -Format 'yyyy-MM-dd'
+    $entry = $null
+
+    if ($TemplatePath -and (Test-Path $TemplatePath)) {
+        $entry = Get-Content -Raw -Path $TemplatePath
+        $entry = $entry.Replace('{{VERSION}}', $Version).Replace('{{DATE}}', $date)
+        if (-not $entry.EndsWith([Environment]::NewLine)) {
+            $entry += [Environment]::NewLine
+        }
+    }
+
+    if (-not $entry) {
+        $entry = "## $Version - $date" + [Environment]::NewLine + "- Describe the release" + [Environment]::NewLine + [Environment]::NewLine
+    }
+
+    if ($Sections -and $Sections.Count -gt 0) {
+        foreach ($section in $Sections) {
+            if ([string]::IsNullOrWhiteSpace($section)) { continue }
+            $entry += "### $section" + [Environment]::NewLine + "- TODO" + [Environment]::NewLine
+        }
+        $entry += [Environment]::NewLine
+    }
+    $content = Get-Content -Raw -Path $ChangelogPath
+    Set-Content -Path $ChangelogPath -Value ($entry + $content) -NoNewline
+}
+
+function Update-LabSearchTelemetry {
+    [CmdletBinding()]
+    param(
+        [string]$LogPath = "logs\search-history.jsonl",
+        [string]$DatabasePath = "data\search_telemetry.db",
+        [string]$ScriptPath = "datalab\scripts\search_telemetry.py"
+    )
+
+    $root = Get-LabRoot
+    $pythonCmd = Get-LabPythonCommand
+
+    $resolvedScript = Join-Path $root $ScriptPath
+    if (-not (Test-Path $resolvedScript)) {
+        throw "Search telemetry script not found at $resolvedScript"
+    }
+
+    $resolvedLog = Join-Path $root $LogPath
+    $resolvedDb = Join-Path $root $DatabasePath
+    $resolvedLogDir = Split-Path -Parent $resolvedLog
+    if (-not (Test-Path $resolvedLogDir)) {
+        New-Item -ItemType Directory -Path $resolvedLogDir -Force | Out-Null
+    }
+
+    $args = @(
+        $resolvedScript,
+        "ingest",
+        "--log-path", $resolvedLog,
+        "--db-path", $resolvedDb
+    )
+
+    & $pythonCmd @args
+    if ($LASTEXITCODE -ne 0) {
+        throw "Search telemetry ingestion failed with exit code $LASTEXITCODE"
+    }
+
+    Write-Host "Search telemetry ingested into $resolvedDb" -ForegroundColor Green
+}
+
+function Invoke-LabSearchLibrarian {
+    [CmdletBinding()]
+    param(
+        [string]$LogPath = "logs\search-history.jsonl",
+        [int]$KeepLast = 5000,
+        [int]$ArchiveOlderThanDays,
+        [string]$ArchiveDirectory = "data\search-history-archive",
+        [switch]$SkipArchive,
+        [switch]$RunTelemetryIngestion,
+        [string]$TelemetryDatabasePath = "data\search_telemetry.db",
+        [string]$TelemetryScriptPath = "datalab\scripts\search_telemetry.py"
+    )
+
+    $root = Get-LabRoot
+    $resolvedLog = Join-Path $root $LogPath
+    if (-not (Test-Path $resolvedLog)) {
+        Write-Warning "Search history log not found at $resolvedLog. Nothing to prune."
+        return
+    }
+
+    $lines = Get-Content -LiteralPath $resolvedLog -ErrorAction SilentlyContinue
+    if (-not $lines -or $lines.Count -eq 0) {
+        Write-Host "Search history log is empty; nothing to prune." -ForegroundColor Yellow
+        return
+    }
+
+    $entries = @()
+    foreach ($line in $lines) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        try {
+            $parsed = $line | ConvertFrom-Json -Depth 16
+            $timestampSource = $parsed.timestamp
+            if (-not $timestampSource) {
+                $timestampValue = Get-Date
+            }
+            elseif ($timestampSource -is [DateTimeOffset]) {
+                $timestampValue = $timestampSource.UtcDateTime
+            }
+            elseif ($timestampSource -is [DateTime]) {
+                if ($timestampSource.Kind -eq [DateTimeKind]::Utc) {
+                    $timestampValue = $timestampSource
+                }
+                else {
+                    $timestampValue = $timestampSource.ToUniversalTime()
+                }
+            }
+            else {
+                $timestampValue = [DateTimeOffset]::Parse(
+                    [string]$timestampSource,
+                    [System.Globalization.CultureInfo]::InvariantCulture,
+                    [System.Globalization.DateTimeStyles]::RoundtripKind
+                ).UtcDateTime
+            }
+            $entries += [pscustomobject]@{ Raw = $line; Data = $parsed; Timestamp = $timestampValue }
+        }
+        catch {
+            Write-Warning "Skipping unparseable search history line: $line"
+        }
+    }
+
+    if (-not $entries -or $entries.Count -eq 0) {
+        Write-Warning "Search history log could not be parsed; aborting cleanup."
+        return
+    }
+
+    $entries = $entries | Sort-Object Timestamp
+    $totalEntries = $entries.Count
+    $archiveEntries = @()
+
+    if ($ArchiveOlderThanDays -gt 0) {
+        $cutoff = (Get-Date).AddDays(-1 * [double]$ArchiveOlderThanDays)
+        $olderItems = $entries | Where-Object { $_.Timestamp -lt $cutoff }
+        if ($olderItems) {
+            $archiveEntries += $olderItems
+            $entries = $entries | Where-Object { $_.Timestamp -ge $cutoff }
+        }
+    }
+
+    if ($KeepLast -gt 0 -and $entries.Count -gt $KeepLast) {
+        $excessCount = $entries.Count - $KeepLast
+        $overflow = $entries | Select-Object -First $excessCount
+        $archiveEntries += $overflow
+        $entries = $entries | Select-Object -Skip $excessCount
+    }
+
+    $archiveEntries = $archiveEntries | Sort-Object Timestamp
+    $remainingEntries = $entries | Sort-Object Timestamp
+    $archivePath = $null
+
+    if ($archiveEntries.Count -gt 0 -and -not $SkipArchive) {
+        $archiveDir = Join-Path $root $ArchiveDirectory
+        if (-not (Test-Path $archiveDir)) {
+            New-Item -ItemType Directory -Path $archiveDir -Force | Out-Null
+        }
+        $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $archivePath = Join-Path $archiveDir "search-history-archive-$stamp.jsonl"
+        $archiveContent = $archiveEntries | ForEach-Object { $_.Raw }
+        Set-Content -LiteralPath $archivePath -Value $archiveContent -NoNewline:$false
+    }
+
+    if ($remainingEntries.Count -gt 0) {
+        $remainingContent = $remainingEntries | ForEach-Object { $_.Raw }
+        Set-Content -LiteralPath $resolvedLog -Value $remainingContent -NoNewline:$false
+    }
+    else {
+        Clear-Content -LiteralPath $resolvedLog
+    }
+
+    if ($RunTelemetryIngestion) {
+        Update-LabSearchTelemetry -LogPath $LogPath -DatabasePath $TelemetryDatabasePath -ScriptPath $TelemetryScriptPath | Out-Null
+    }
+
+    return [pscustomobject]@{
+        TotalEntries     = $totalEntries
+        ArchivedEntries  = $archiveEntries.Count
+        RemainingEntries = $remainingEntries.Count
+        ArchivePath      = $archivePath
+    }
+}
+
+function Invoke-LabReleaseChecklist {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Script)
+
+    if (-not (Test-Path $Script)) {
+        Write-Warning "Release checklist script $Script not found; skipping."
+        return
+    }
+
+    & pwsh -File $Script
+    if ($LASTEXITCODE -ne 0) {
+        throw "Release checklist script failed with exit code $LASTEXITCODE"
+    }
+}
+
+function Invoke-LabReleasePipeline {
+    [CmdletBinding()]
+    param(
+        [string]$Version,
+        [ValidateSet('patch','minor','major')]
+        [string]$Bump = 'patch',
+        [switch]$Force,
+        [switch]$AsJob,
+        [switch]$DryRun,
+        [switch]$SkipIntegrity,
+        [switch]$Push,
+        [switch]$FinalizeChangelog,
+        [switch]$RunTests,
+        [switch]$UpdateIntegrity,
+        [string]$Branch = "main",
+        [string]$ChangelogPath = "CHANGELOG.md",
+        [string]$ChangelogTemplate,
+        [string[]]$ChangelogSections,
+        [string]$TagMessage
+    )
+
+    if (-not $PSBoundParameters.ContainsKey('Push')) { $Push = $true }
+    if (-not $PSBoundParameters.ContainsKey('FinalizeChangelog')) { $FinalizeChangelog = $true }
+    if (-not $PSBoundParameters.ContainsKey('RunTests')) { $RunTests = $true }
+    if (-not $PSBoundParameters.ContainsKey('UpdateIntegrity')) { $UpdateIntegrity = $true }
+
+    $releaseArgs = [ordered]@{ Branch = $Branch }
+
+    if ($Version) { $releaseArgs['Version'] = $Version }
+    if (-not $Version -and $Bump) { $releaseArgs['Bump'] = $Bump }
+    if ($Force) { $releaseArgs['Force'] = $true }
+    if ($DryRun) { $releaseArgs['DryRun'] = $true }
+    if ($SkipIntegrity) { $releaseArgs['SkipIntegrity'] = $true }
+    if ($Push) { $releaseArgs['Push'] = $true }
+    if ($FinalizeChangelog) { $releaseArgs['FinalizeChangelog'] = $true }
+    if ($RunTests) { $releaseArgs['RunTests'] = $true }
+    if ($UpdateIntegrity) { $releaseArgs['UpdateIntegrity'] = $true }
+    if ($ChangelogPath) { $releaseArgs['ChangelogPath'] = $ChangelogPath }
+    if ($ChangelogTemplate) { $releaseArgs['ChangelogTemplate'] = $ChangelogTemplate }
+    if ($ChangelogSections) { $releaseArgs['ChangelogSections'] = $ChangelogSections }
+    if ($TagMessage) { $releaseArgs['TagMessage'] = $TagMessage }
+
+    if ($AsJob) {
+        $jobName = Get-LabJobName "release-pipeline"
+        $modulePath = Join-Path $PSScriptRoot "LabControl.psm1"
+        return Start-Job -Name $jobName -InitializationScript { Set-StrictMode -Version Latest } -ScriptBlock {
+                param($modulePath, $arguments)
+                Import-Module $modulePath -Force
+                Publish-LabRelease @arguments
+            } -ArgumentList $modulePath, $releaseArgs
+    }
+
+    return Publish-LabRelease @releaseArgs
+}
+
 function Publish-LabRelease {
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory)][string]$Version,
+        [string]$Version,
+        [ValidateSet('patch','minor','major')]
+        [string]$Bump,
         [switch]$Push,
         [switch]$Force,
         [switch]$DryRun,
         [switch]$SkipIntegrity,
         [string]$Branch = "main",
-        [string]$TagMessage
+        [string]$TagMessage,
+        [switch]$FinalizeChangelog,
+        [switch]$RunTests,
+        [switch]$UpdateIntegrity,
+        [string]$ChangelogPath = "CHANGELOG.md",
+        [string]$ReleaseChecklistScript = "scripts/release_checklist.ps1",
+        [string]$ChangelogTemplate,
+        [string[]]$ChangelogSections
     )
+
+    if (-not $Version -and -not $Bump) {
+        throw "Publish-LabRelease requires -Version or -Bump."
+    }
 
     $root = Get-LabRoot
     $gitPath = Get-LabExecutablePath -Names @("git") -Require
     $pythonCmd = Get-LabPythonCommand
 
-    $tagName = if ($Version -like "v*") { $Version } else { "v$Version" }
+    $resolvedVersion = Resolve-LabReleaseVersion -Version $Version -Bump $Bump
+    $tagName = if ($resolvedVersion -like "v*") { $resolvedVersion } else { "v$resolvedVersion" }
     if (-not $TagMessage) {
         $TagMessage = "Framework $tagName"
     }
@@ -793,7 +1269,7 @@ function Publish-LabRelease {
         if (-not $SkipIntegrity) {
             & $pythonCmd scripts/project_integrity.py status
             $integrityExit = $LASTEXITCODE
-            if ($integrityExit -ne 0) {
+            if ($integrityExit -ne 0 -and -not $UpdateIntegrity) {
                 $preflightIssues += "project_integrity.py status exited with $integrityExit"
             }
         }
@@ -818,6 +1294,25 @@ function Publish-LabRelease {
         if ($preflightIssues.Count -gt 0 -and -not $Force) {
             $message = "Release preflight failed:`n - " + ($preflightIssues -join "`n - ")
             throw $message
+        }
+
+        if ($FinalizeChangelog -or $RunTests -or $UpdateIntegrity) {
+            Write-Verbose "Running release checklist helpers"
+        }
+
+        if ($FinalizeChangelog) {
+            $changelogParams = @{ Version = $tagName; ChangelogPath = (Join-Path $root $ChangelogPath) }
+            if ($ChangelogTemplate) { $changelogParams['TemplatePath'] = (Join-Path $root $ChangelogTemplate) }
+            if ($ChangelogSections) { $changelogParams['Sections'] = $ChangelogSections }
+            Update-LabChangelog @changelogParams
+        }
+
+        if ($RunTests) {
+            Invoke-LabReleaseChecklist -Script (Join-Path $root $ReleaseChecklistScript)
+        }
+
+        if ($UpdateIntegrity) {
+            & $pythonCmd scripts/project_integrity.py checkpoint --tag release --reason $tagName
         }
 
         if ($existingTag -and $Force) {

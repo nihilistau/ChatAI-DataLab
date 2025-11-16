@@ -4,6 +4,7 @@ from __future__ import annotations
 
 # @tag: datalab,tests,notebooks
 
+import json
 from pathlib import Path
 import sqlite3
 
@@ -11,6 +12,7 @@ import papermill as pm
 import pytest
 
 from tests.utils.notebooks import normalize_notebook
+from datalab.scripts import search_telemetry
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:datetime\\.datetime\\.utcnow\\(\\) is deprecated.*:DeprecationWarning:papermill.*",
@@ -61,6 +63,46 @@ def _create_sample_db(db_path: Path) -> None:
         conn.close()
 
 
+def _create_sample_search_db(db_path: Path) -> None:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path = db_path.parent / "search-history.jsonl"
+    sample_entries = [
+        {
+            "timestamp": "2025-11-15T12:00:00Z",
+            "pattern": "TODO",
+            "preset": "todo-scan",
+            "regex": False,
+            "caseSensitive": False,
+            "root": "./",
+            "recursive": True,
+            "includeFiles": ["*.py"],
+            "excludePatterns": ["node_modules"],
+            "filesScanned": 5,
+            "matches": 2,
+            "durationMs": 150,
+        },
+        {
+            "timestamp": "2025-11-16T08:30:00Z",
+            "pattern": "FIXME",
+            "preset": "todo-scan",
+            "regex": False,
+            "caseSensitive": False,
+            "root": "./",
+            "recursive": True,
+            "includeFiles": ["*.ts"],
+            "excludePatterns": ["storybook"],
+            "filesScanned": 3,
+            "matches": 0,
+            "durationMs": 90,
+        },
+    ]
+    with log_path.open("w", encoding="utf-8") as handle:
+        for entry in sample_entries:
+            handle.write(json.dumps(entry) + "\n")
+
+    search_telemetry.ingest_search_history(log_path, db_path)
+
+
 @pytest.mark.parametrize(
     "notebook_name",
     [
@@ -69,6 +111,7 @@ def _create_sample_db(db_path: Path) -> None:
         "control_center_playground.ipynb",
         "elements_playground.ipynb",
         "elements_reporting.ipynb",
+        "search_telemetry.ipynb",
     ],
 )
 def test_notebooks_execute(notebook_name: str, tmp_path: Path) -> None:
@@ -78,11 +121,16 @@ def test_notebooks_execute(notebook_name: str, tmp_path: Path) -> None:
 
     sample_db = tmp_path / "interactions.db"
     _create_sample_db(sample_db)
+    sample_search_db = tmp_path / "search_telemetry.db"
+    _create_sample_search_db(sample_search_db)
 
     pm.execute_notebook(
         str(normalized_notebook),
         str(output_path),
-        parameters={"DB_PATH": str(sample_db)},
+        parameters={
+            "DB_PATH": str(sample_db),
+            "SEARCH_DB_PATH": str(sample_search_db),
+        },
         kernel_name="python3",
         cwd=NOTEBOOK_DIR,
         log_output=True,

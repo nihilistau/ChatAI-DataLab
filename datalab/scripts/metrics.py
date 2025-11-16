@@ -4,16 +4,19 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
+from datalab.lab_paths import data_path
 
 
-def load_interactions(db_path: Path) -> pd.DataFrame:
+def load_interactions(db_path: str | os.PathLike[str] | None = None) -> pd.DataFrame:
     import sqlite3
 
-    conn = sqlite3.connect(db_path)
+    target = data_path("interactions.db") if db_path is None else Path(db_path)
+    conn = sqlite3.connect(target)
     try:
         return pd.read_sql_query("SELECT * FROM interactions ORDER BY created_at DESC", conn)
     finally:

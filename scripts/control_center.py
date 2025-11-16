@@ -123,3 +123,16 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+
+Set-Location -Path "d:\Files\Code 3\ChatAI-DataLab\chatai\backend"; & .\.venv\Scripts\python.exe -m pytest tests/test_commands_api.py
+
+
+
+D:\Files\Code 3\ChatAI-DataLab\chatai\backend\venv\Scripts
+D:\Files\Code 3\ChatAI-DataLab\chatai\backend
+D:\Files\Code 3\ChatAI-DataLab
+
+D:\Files\Code 3\ChatAI-DataLab\chatai\frontend
+D:\Files\Code 3\ChatAI-DataLab\chatai\

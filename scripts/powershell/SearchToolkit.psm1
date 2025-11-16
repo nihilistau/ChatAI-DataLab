@@ -168,25 +168,59 @@ function Invoke-RepoSearch {
         $files = $files | Where-Object { -not (Test-PathMatchesPattern -Path $_.FullName -Patterns $effectiveExclude) }
     }
 
+    $baseLogEntry = [ordered]@{
+        timestamp = (Get-Date).ToString('o')
+        pattern = $Pattern
+        preset = $Preset
+        regex = [bool]$Regex
+        caseSensitive = [bool]$CaseSensitive
+        root = $resolvedRoot
+        recursive = $recursive
+        includeFiles = $effectiveIncludes
+        excludePatterns = $effectiveExclude
+    }
+
+    $writeLog = {
+        param(
+            [string]$Mode,
+            [int]$FilesScanned,
+            [Nullable[int]]$Matches,
+            [long]$DurationMs
+        )
+        if ($NoLog) { return }
+        $entry = [ordered]@{}
+        foreach ($key in $baseLogEntry.Keys) {
+            $entry[$key] = $baseLogEntry[$key]
+        }
+        $entry["mode"] = $Mode
+        $entry["filesScanned"] = $FilesScanned
+        $entry["matches"] = $Matches
+        $entry["durationMs"] = $DurationMs
+        Write-SearchLog -Entry $entry
+    }
+
     if ($ListFiles) {
+        & $writeLog 'list-files' ($files.Count) $null 0
         return $files | Select-Object FullName, Length, LastWriteTime
     }
 
     if ($DryRun) {
-            $dryRunData = @{
+        $dryRunData = @{
             Pattern = $Pattern
             Root = $resolvedRoot
             Recursive = $recursive
             IncludeFiles = $effectiveIncludes
             ExcludePatterns = $effectiveExclude
             PendingFiles = $files.Count
-            } | ConvertTo-Json -Depth 4
-            Write-Information -MessageData $dryRunData -InformationAction Continue
+        } | ConvertTo-Json -Depth 4
+        Write-Information -MessageData $dryRunData -InformationAction Continue
+        & $writeLog 'dry-run' ($files.Count) $null 0
         return
     }
 
     if (-not $files -or $files.Count -eq 0) {
         Write-Information "No files matched the requested filters." -InformationAction Continue
+        & $writeLog 'no-files' 0 0 0
         return
     }
 
@@ -224,22 +258,7 @@ function Invoke-RepoSearch {
         Write-Information -MessageData $statsText -InformationAction Continue
     }
 
-    if (-not $NoLog) {
-        Write-SearchLog -Entry (@{
-            timestamp = (Get-Date).ToString('o')
-            pattern = $Pattern
-            preset = $Preset
-            regex = [bool]$Regex
-            caseSensitive = [bool]$CaseSensitive
-            root = $resolvedRoot
-            recursive = $recursive
-            includeFiles = $effectiveIncludes
-            excludePatterns = $effectiveExclude
-            filesScanned = $fileCount
-            matches = $matchCount
-            durationMs = $sw.ElapsedMilliseconds
-        })
-    }
+    & $writeLog 'search' $fileCount $matchCount $sw.ElapsedMilliseconds
 
     if ($results) {
         return $results | Select-Object FileName, LineNumber, Line, Path
