@@ -1,6 +1,6 @@
 # Goals & Achievements Log
 
-> **Last updated:** 2025-11-16 13:10 UTC  
+> **Last updated:** 2025-11-16 07:15 UTC  
 > **Current milestone:** Control Capsules bootstrap (in flight)  
 > **Scope:** Every implemented capability is logged below. New work enters the “Ongoing Additions” table first, then graduates into Project Overview + Expanded Functionality once shipped.
 
@@ -29,6 +29,7 @@
 | Notebook templates | Ship templated notebooks (Interaction summary, Pause heatmap, Prompt rewrite tree) for analysts. | DataLab | Content plan complete; notebook scaffolds pending. |
 | Capsule manifest & loader | Introduce `configs/capsules/*.json`, LabControl verbs, and snapshots so new environments can be saved/loaded on demand. | Platform/Control plane | Spec lives in `docs/OPERATIONS_HANDBOOK.md §10`; implementation slated for v1.1.0. |
 | Bootstrap capsule (default environment) | Ship the onboarding capsule that configures credentials, runs health checks, and guides new builders through creating their first capsule. | Platform/DataLab | Needs template notebooks + Control Center layout; target after Control Capsule handbook adoption. |
+| Onboarding capsule persistence | Combine capsule manifests with durable state (save/load verbs, snapshot storage) so a fresh install can resume its last Ops Deck configuration immediately. | Platform/DataLab | Goal opened post v1.0.2 release; awaiting design spikes for storage backend + LabControl verbs. |
 
 ## Change Logging Rules
 
