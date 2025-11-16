@@ -1,3 +1,4 @@
+import { beforeAll, describe, expect, it } from "vitest";
 import { elementsRegistry } from "../registry";
 import { builtInNodes } from "../nodes";
 describe("elements registry", () => {

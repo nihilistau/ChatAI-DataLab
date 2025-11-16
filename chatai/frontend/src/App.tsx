@@ -10,7 +10,9 @@ import ConversationThread from "./components/ConversationThread";
 import PromptRecorder, { InteractionCompleteArgs } from "./components/PromptRecorder";
 import ArtifactsShelf from "./components/ArtifactsShelf";
 import TailLogCell from "./components/TailLogCell";
+import SearchTelemetryCard from "./components/SearchTelemetryCard";
 import OpsDeck from "./components/OpsDeck";
+import WidgetShowcase from "./components/design-system/WidgetShowcase";
 import { createArtifact, createTailLogEntry, fetchArtifacts, fetchOpsStatus, fetchTailLog, sendOpsCommand } from "./lib/api";
 import { estimateTokens } from "./lib/text";
 import type {
@@ -401,6 +403,7 @@ function App() {
         </section>
 
         <div className="intel-stack">
+          <SearchTelemetryCard />
           <TailLogCell entries={tailLog} />
         </div>
       </div>
@@ -421,6 +424,8 @@ function App() {
       </section>
 
       <ArtifactsShelf artifacts={artifactItems} />
+
+      <WidgetShowcase />
     </main>
   );
 }

@@ -3,6 +3,7 @@
  */
 // @tag: frontend,lib,api
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+const CONTROL_STATUS_FIXTURE = import.meta.env.VITE_CONTROL_STATUS_FIXTURE;
 async function apiFetch(path, init) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
         headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
@@ -78,7 +79,14 @@ export function sendOpsCommand(payload) {
         body: JSON.stringify(payload)
     });
 }
-export function fetchControlStatus(includeLogs = false, logLines = 60) {
+export async function fetchControlStatus(includeLogs = false, logLines = 60) {
+    if (CONTROL_STATUS_FIXTURE) {
+        const response = await fetch(CONTROL_STATUS_FIXTURE, { cache: "no-store" });
+        if (!response.ok) {
+            throw new Error(`Fixture fetch failed (${response.status}): ${response.statusText}`);
+        }
+        return response.json();
+    }
     const query = new URLSearchParams({
         include_logs: includeLogs ? "true" : "false",
         log_lines: `${logLines}`
@@ -120,6 +128,37 @@ const mapNotebookJob = (input) => ({
     error: input.error ?? undefined,
     parameters: input.parameters ?? {}
 });
+const mapTelemetrySummary = (input) => ({
+    totalRuns: input.total_runs ?? input.totalRuns ?? 0,
+    runsLast24h: input.runs_last_24h ?? input.runsLast24h ?? 0,
+    runsWithMatches: input.runs_with_matches ?? input.runsWithMatches ?? 0,
+    matchRate: input.match_rate ?? input.matchRate ?? 0,
+    avgDurationMs: input.avg_duration_ms ?? input.avgDurationMs ?? null,
+    avgMatchDensity: input.avg_match_density ?? input.avgMatchDensity ?? null,
+    lastIngestAt: normalizeOptionalTimestamp(input.last_ingest_at ?? input.lastIngestAt),
+    topPatterns: (input.top_patterns ?? input.topPatterns ?? []).map((pattern) => ({
+        pattern: pattern.pattern,
+        runs: pattern.runs,
+        totalMatches: pattern.total_matches ?? pattern.totalMatches ?? 0,
+        avgFilesScanned: pattern.avg_files_scanned ?? pattern.avgFilesScanned ?? 0
+    })),
+    presetDrift: (input.preset_drift ?? input.presetDrift ?? []).map((entry) => ({
+        preset: entry.preset,
+        tags: entry.tags ?? [],
+        totalRuns: entry.total_runs ?? entry.totalRuns ?? 0,
+        recentRuns: entry.recent_runs ?? entry.recentRuns ?? 0,
+        matchRateLifetime: entry.match_rate_lifetime ?? entry.matchRateLifetime ?? 0,
+        matchRateRecent: entry.match_rate_recent ?? entry.matchRateRecent ?? 0,
+        avgDurationLifetime: entry.avg_duration_lifetime ?? entry.avgDurationLifetime ?? 0,
+        avgDurationRecent: entry.avg_duration_recent ?? entry.avgDurationRecent ?? 0,
+        avgDensityLifetime: entry.avg_density_lifetime ?? entry.avgDensityLifetime ?? 0,
+        avgDensityRecent: entry.avg_density_recent ?? entry.avgDensityRecent ?? 0,
+        deltaMatchRate: entry.delta_match_rate ?? entry.deltaMatchRate ?? 0,
+        deltaDurationMs: entry.delta_duration_ms ?? entry.deltaDurationMs ?? 0,
+        deltaDensity: entry.delta_density ?? entry.deltaDensity ?? 0,
+        status: entry.status ?? "stable"
+    }))
+});
 export async function fetchControlWidgets() {
     const data = await apiFetch(`/api/control/widgets`);
     return mapWidgetSnapshot(data);
@@ -134,4 +173,8 @@ export async function triggerNotebookJob(payload) {
         body: JSON.stringify(payload)
     });
     return mapNotebookJob(data);
+}
+export async function fetchSearchTelemetrySummary() {
+    const data = await apiFetch(`/api/ops/search-telemetry`);
+    return mapTelemetrySummary(data);
 }

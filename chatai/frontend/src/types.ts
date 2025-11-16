@@ -193,3 +193,41 @@ export interface ControlWidgetSnapshot {
   sparklines: WidgetSparklines;
   ruBudget: RUBudget;
 }
+
+export interface SearchTelemetryTopPattern {
+  pattern: string;
+  runs: number;
+  totalMatches: number;
+  avgFilesScanned: number;
+}
+
+export type PresetDriftStatus = "stable" | "regressing" | "improving";
+
+export interface SearchPresetDrift {
+  preset: string;
+  tags: string[];
+  totalRuns: number;
+  recentRuns: number;
+  matchRateLifetime: number;
+  matchRateRecent: number;
+  avgDurationLifetime: number;
+  avgDurationRecent: number;
+  avgDensityLifetime: number;
+  avgDensityRecent: number;
+  deltaMatchRate: number;
+  deltaDurationMs: number;
+  deltaDensity: number;
+  status: PresetDriftStatus;
+}
+
+export interface SearchTelemetrySummary {
+  totalRuns: number;
+  runsLast24h: number;
+  runsWithMatches: number;
+  matchRate: number;
+  avgDurationMs?: number | null;
+  avgMatchDensity?: number | null;
+  lastIngestAt?: number | null;
+  topPatterns: SearchTelemetryTopPattern[];
+  presetDrift: SearchPresetDrift[];
+}

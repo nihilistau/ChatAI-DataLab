@@ -6,8 +6,10 @@ const formatTimestamp = (timestamp) => {
     return new Date(timestamp).toLocaleTimeString();
 };
 export const NotebookMonitor = ({ notebooks, onRun }) => {
-    const [dbPath, setDbPath] = useState("./interactions.db");
-    const [statusUrl, setStatusUrl] = useState("http://localhost:8000/api/control/status");
+    const defaultDbPath = import.meta.env.VITE_DEFAULT_DB_PATH ?? "./interactions.db";
+    const defaultStatusUrl = import.meta.env.VITE_DEFAULT_CONTROL_STATUS_URL ?? "http://localhost:8000/api/control/status";
+    const [dbPath, setDbPath] = useState(defaultDbPath);
+    const [statusUrl, setStatusUrl] = useState(defaultStatusUrl);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [feedback, setFeedback] = useState(null);
     const handleRun = async () => {
