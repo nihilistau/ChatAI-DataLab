@@ -22,10 +22,12 @@ from ..schemas import (
     OpsCommandRequest,
     OpsCommandResponse,
     OpsStatus,
+    SearchTelemetrySummary,
     TailLogEntryCreate,
     TailLogEntryRead,
 )
 from ..services.llm_client import get_llm_client
+from ..services.search_telemetry import get_search_telemetry_summary
 
 from app.services.orchestrator import get_orchestrator  # type: ignore  # noqa: E402
 
@@ -142,3 +144,9 @@ def control_ops(payload: OpsCommandRequest):
         log_lines=payload.log_lines or 60,
     )
     return OpsCommandResponse(**result)
+
+
+@router.get("/ops/search-telemetry", response_model=SearchTelemetrySummary, tags=["ops"])
+def fetch_search_telemetry_summary():
+    summary = get_search_telemetry_summary()
+    return SearchTelemetrySummary(**summary)

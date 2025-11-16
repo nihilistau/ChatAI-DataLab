@@ -108,12 +108,12 @@ class ElementRun(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     graph_id: Mapped[str] = mapped_column(String(36), ForeignKey("element_graphs.id"), nullable=False)
-    status: Mapped[str] = mapped_column(String(16), nullable=False, default="succeeded")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
     result_json = Column(JSON, nullable=False, default=dict)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
     )
     completed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), nullable=True
     )

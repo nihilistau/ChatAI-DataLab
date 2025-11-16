@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.commands import router as commands_router
 from app.api.control import router as control_router
 from app.api.elements import router as elements_router
 from app.api.routes import router as chat_router
@@ -45,6 +46,7 @@ app.add_middleware(
 app.include_router(chat_router, prefix="/api")
 app.include_router(control_router, prefix="/api")
 app.include_router(elements_router, prefix="/api")
+app.include_router(commands_router, prefix="/api")
 
 
 # --- Diagnostics --------------------------------------------------------------

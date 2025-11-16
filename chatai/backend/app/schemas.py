@@ -175,6 +175,42 @@ class OpsCommandResponse(APIModel):
     timestamp: float
 
 
+class SearchTelemetryTopPattern(APIModel):
+    pattern: str
+    runs: int
+    total_matches: int
+    avg_files_scanned: float
+
+
+class SearchPresetDrift(APIModel):
+    preset: str
+    tags: list[str] = Field(default_factory=list)
+    total_runs: int
+    recent_runs: int
+    match_rate_lifetime: float
+    match_rate_recent: float
+    avg_duration_lifetime: float
+    avg_duration_recent: float
+    avg_density_lifetime: float
+    avg_density_recent: float
+    delta_match_rate: float
+    delta_duration_ms: float
+    delta_density: float
+    status: Literal["stable", "regressing", "improving"]
+
+
+class SearchTelemetrySummary(APIModel):
+    total_runs: int
+    runs_last_24h: int
+    runs_with_matches: int
+    match_rate: float
+    avg_duration_ms: float | None = None
+    avg_match_density: float | None = None
+    last_ingest_at: datetime | None = None
+    top_patterns: list[SearchTelemetryTopPattern] = Field(default_factory=list)
+    preset_drift: list[SearchPresetDrift] = Field(default_factory=list)
+
+
 # --- Control Center schemas -------------------------------------------------
 NotebookStatus = Literal["queued", "running", "succeeded", "failed"]
 
@@ -294,7 +330,7 @@ class GraphRunRequest(APIModel):
     )
 
 
-GraphRunStatus = Literal["queued", "succeeded", "failed"]
+GraphRunStatus = Literal["queued", "running", "succeeded", "failed"]
 
 
 class GraphNodeTrace(APIModel):
@@ -310,7 +346,49 @@ class GraphRunRead(APIModel):
     graph_id: str
     status: GraphRunStatus
     created_at: datetime
-    completed_at: datetime
+    completed_at: datetime | None = None
     outputs: dict[str, Any]
     trace: list[GraphNodeTrace]
     error: Optional[str] = None
+
+
+# --- Command tracker schemas -----------------------------------------------
+CommandStatus = Literal["never-run", "running", "succeeded", "failed"]
+
+
+class CommandExecutionRead(APIModel):
+    timestamp: datetime
+    status: CommandStatus
+    exit_code: Optional[int] = None
+    output: Optional[str] = None
+    notes: Optional[str] = None
+    failed: bool
+    command: Optional[str] = None
+
+
+class CommandRecord(APIModel):
+    id: str
+    label: str
+    command: str
+    created_at: datetime
+    added_by: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    description: Optional[str] = None
+    working_dir: Optional[str] = None
+    last_status: CommandStatus
+    last_run_at: Optional[datetime] = None
+    history: list[CommandExecutionRead] = Field(default_factory=list)
+
+
+class CommandCreateRequest(APIModel):
+    label: str = Field(..., min_length=2)
+    command: str = Field(..., min_length=2)
+    tags: list[str] = Field(default_factory=list)
+    description: Optional[str] = None
+    added_by: Optional[str] = None
+    working_dir: Optional[str] = None
+
+
+class CommandRunRequest(APIModel):
+    dry_run: bool = False
+    shell: Optional[str] = None
