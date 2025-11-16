@@ -15,34 +15,15 @@ This document captures the completed ChatAI capture pipeline and DataLab insight
 | 2025-11-15 | Repo-wide PowerShell Search Toolkit | `scripts/powershell/SearchToolkit.psm1`, `scripts/powershell/search-presets.json`, `scripts/powershell/examples/find-todos.ps1` | Adds reusable presets, JSONL logging, and dry-run stats for observability-ready code sweeps. |
 | 2025-11-15 | LabControl Search Proxy | `scripts/powershell/LabControl.psm1`, `scripts/lab-control.ps1` | LabControl can now run any preset via `-SearchPreset` / `-SearchPattern`, keeping Windows + Linux ops flows aligned. |
 | 2025-11-15 | Release Automation Helper | `scripts/powershell/LabControl.psm1`, `scripts/lab-control.ps1`, `docs/RELEASE_CHECKLIST.md` | `Publish-LabRelease` runs integrity, tagging, and optional pushes (with `-DryRun` support) so Framework releases stay reproducible. |
+| 2025-11-15 | Release Checklist Runner | `scripts/release_checklist.ps1`, `scripts/powershell/LabControl.psm1` | `-RunTests` flag executes backend/notebook/frontend checks before tagging; `-FinalizeChangelog` and `-UpdateIntegrity` keep metadata fresh. |
+| 2025-11-15 | Search telemetry ingestion | `datalab/scripts/search_telemetry.py`, `datalab/notebooks/search_telemetry.ipynb`, `tests/test_notebooks.py`, `scripts/lab-control.ps1` | Search Toolkit logs hydrate into `data/search_telemetry.db`, powering notebooks + Ops Deck charts (ingest via LabControl or direct CLI). |
+| 2025-11-15 | Release pipeline presets | `scripts/powershell/LabControl.psm1`, `scripts/lab-control.ps1`, `docs/CHANGELOG_TEMPLATE.md` | `Publish-LabRelease` now supports `-Bump` version presets, changelog templating, and the `-ReleasePipeline` job to run tests, integrity, and pushes end-to-end. |
+| 2025-11-15 | Command history filters | `chatai/backend/app/api/commands.py`, `tests/test_commands_api.py` | `/api/commands` now supports `status`, `tag`, and `limit` filters plus a dedicated `/api/commands/{id}/history` endpoint for paginated history access. |
+| 2025-11-15 | Lab bootstrap + command listing | `scripts/lab-bootstrap.ps1`, `scripts/powershell/LabControl.psm1`, `configs/lab_environment_config.md` | Bootstraps env vars, deep scans notebooks/backend/frontend, exposes `List-Commands` inside LabControl, and documents canonical syntax/paths. |
+| 2025-11-15 | Diagnostics + healthcheck wiring | `datalab/lab_paths.py`, `datalab/diagnostics.py`, `scripts/control_health.py`, `chatai/frontend/src/lib/api.ts`, `scripts/powershell/LabControl.psm1` | Unified `LAB_ROOT` helpers, structured diagnostics log, Papermill metadata, Control Center fixture toggles, and the `Test-LabHealth` command. |
 
 ---
 ## Overview ##
-
-## IMPORTANT ##
-## SYSTEM PROMPT ##
-
-Everything Here has been achieved. We need to set new goals and document them here in expanded goals.
-Expanded goals are to be written in the same style as the rest of the document.
-We need to consider this complete and accurate. A completed work as the foundation for future improvements.
-And we need to document the achieved objectives as well. We need to make sure the achieved objectives are clearly stated. Re-write them as
-more of a complete list and overview  of the current features, tweak this file to reflect that.
-it's the overview, feature set. Description of how it's structured. The purpose, Commands, etc.
-Keep it mostly the way it is but make it more obvious its a description of the system.
-Set a date and a time tag or a comment section that explains Date and time written.
-A version. or milestone version. This should be renamed or restricted to only implemented features.
-Use another new file for goals and acievments and think of this as A version feature list.
-it should be versioned and updated. strictly following the rules established.
-I have made a few small changes, take my lead. You will need to make a section in here at the top.
-that will be called expanded functionality. or upgrades. AS YOU PUT AN ENTRY IN THE EXPANDED GOALS
-SECTION. YOU MUST ALSO UPDATE THE TAGS FILE TO ADD ANY NEW TAGS. WRITE ALL NEW FUNCTIONALITY AND 
-FUNCTIONS YOU ADD TO THE PROJECT IN THE EXPANDED GOALS SECTION. And then at some point you will
-have to rewrite this expanding and clarifying. Just make sure anything written in here is real and
-working. No plans or ideas. Only real things that are done. If you add a new | Layer      | Responsibilities | Key Tech |
-than add it here under the others, do this for everything. from here on out. versioning on all changes
-should be done at all times
-
-## END IMPORTANT ##
 
 
 ## 1. Libraries Purpose
@@ -267,7 +248,7 @@ Key commands (each proxies to standard `Start-Job` / `Stop-Job` primitives but m
 
 1. **Secrets management**: Store API keys in repo-local `.env` files that FastAPI and notebooks consume via `python-dotenv`. Never commit secrets; production deployments should source them from managed vaults (Azure Key Vault, AWS Secrets Manager, etc.).
 2. **Test + notebook parity**: `chatai/backend/tests` and `datalab/tests` provide regression coverage for the recorder payload, FastAPI schema validation, metrics helpers, and Papermill notebooks. Extend these suites before modifying public endpoints or notebook contracts.
-3. **Observability hooks**: Structured logging, the Search Toolkit presets, and `logs/search-history.jsonl` form the baseline telemetry story. Invoke `Get-SearchHistory` or the LabControl search proxy to audit repo hygiene before every milestone cut.
+3. **Observability hooks**: Structured logging, the Search Toolkit presets, and the new `data/search_telemetry.db` (hydrated from `logs/search-history.jsonl`) form the baseline telemetry story. Run `Update-LabSearchTelemetry` (or the LabControl `-RunSearchTelemetryIngestion` flag) plus `Get-SearchHistory` before every milestone cut so Ops Deck widgets can trend hygiene sweeps.
 4. **Change documentation**: Every shipped addition must (a) add a dated entry to the “Expanded Functionality” table above, (b) append a record to `docs/GOALS_AND_ACHIEVEMENTS.md`, and (c) update relevant tags/configs. Ideas that are not yet implemented stay out of this file.
 
 With the framework baseline locked, this overview now functions as the source of truth for what is production-ready. Treat any future edits as release notes for implemented work only.

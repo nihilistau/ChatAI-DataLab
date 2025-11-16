@@ -1,0 +1,190 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chatai-datalab/elements.schema.json",
+  "title": "ChatAI Elements Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "catalogVersion": {
+      "description": "Semantic version for the catalog itself.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "elements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/ElementDefinition"
+      }
+    }
+  },
+  "required": ["catalogVersion", "elements"],
+  "definitions": {
+    "PortDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string" },
+        "description": { "type": "string" },
+        "dataType": { "type": "string" },
+        "required": { "type": "boolean", "default": false }
+      },
+      "required": ["label", "dataType"]
+    },
+    "RuntimeDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "executor": {
+          "type": "string",
+          "enum": ["client", "server", "notebook"]
+        },
+        "handler": {
+          "type": "string",
+          "description": "Identifier for the backend service, notebook cell, or client hook."
+        }
+      },
+      "required": ["executor", "handler"]
+    },
+    "ElementDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+@[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "label": { "type": "string" },
+        "icon": { "type": "string" },
+        "category": { "type": "string" },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/PortDefinition" }
+        },
+        "outputs": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/PortDefinition" }
+        },
+        "propsSchema": {
+          "type": "object",
+          "description": "JSON Schema describing configurable properties for the node."
+        },
+        "runtime": { "$ref": "#/definitions/RuntimeDefinition" },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "version",
+        "label",
+        "inputs",
+        "outputs",
+        "propsSchema",
+        "runtime"
+      ]
+    }
+  },
+  "elements": [
+    {
+      "id": "prompt@1.0.0",
+      "type": "prompt",
+      "version": "1.0.0",
+      "label": "Prompt Node",
+      "icon": "message-square",
+      "category": "llm",
+      "inputs": {
+        "context": {
+          "label": "Context",
+          "description": "Optional supplemental context passed to the prompt template.",
+          "dataType": "rich-text",
+          "required": false
+        }
+      },
+      "outputs": {
+        "message": {
+          "label": "Prompt",
+          "description": "Resolved prompt body ready for downstream LLM nodes.",
+          "dataType": "rich-text",
+          "required": true
+        }
+      },
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "systemPrompt": {
+            "type": "string",
+            "title": "System prompt",
+            "description": "High-level behavior instructions for the model."
+          },
+          "userTemplate": {
+            "type": "string",
+            "title": "User template",
+            "description": "Template string supporting mustache-style replacements."
+          }
+        },
+        "required": ["userTemplate"],
+        "additionalProperties": false
+      },
+      "runtime": {
+        "executor": "client",
+        "handler": "@elements/prompt/render"
+      }
+    },
+    {
+      "id": "dataset@1.0.0",
+      "type": "dataset",
+      "version": "1.0.0",
+      "label": "Dataset Node",
+      "icon": "database",
+      "category": "data",
+      "inputs": {},
+      "outputs": {
+        "rows": {
+          "label": "Rows",
+          "description": "Structured dataset rows emitted as JSON records.",
+          "dataType": "table",
+          "required": true
+        }
+      },
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "enum": ["cosmos", "sqlite", "upload"],
+            "default": "sqlite"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query",
+            "description": "SQL or filter expression depending on source."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000,
+            "default": 100
+          }
+        },
+        "required": ["source"],
+        "additionalProperties": false
+      },
+      "runtime": {
+        "executor": "server",
+        "handler": "api.elements.dataset.execute"
+      }
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://chatai-datalab/elements-catalog",
+  "catalogVersion": "0.1.0",
+  "elements": [
+    {
+      "id": "prompt@1.0.0",
+      "type": "prompt",
+      "version": "1.0.0",
+      "label": "Prompt Node",
+      "icon": "message-square",
+      "category": "llm",
+      "inputs": {
+        "context": {
+          "label": "Context",
+          "description": "Optional supplemental context passed to the prompt template.",
+          "dataType": "rich-text",
+          "required": false
+        }
+      },
+      "outputs": {
+        "message": {
+          "label": "Prompt",
+          "description": "Resolved prompt body ready for downstream LLM nodes.",
+          "dataType": "rich-text",
+          "required": true
+        }
+      },
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "systemPrompt": {
+            "type": "string",
+            "title": "System prompt",
+            "description": "High-level behavior instructions for the model."
+          },
+          "userTemplate": {
+            "type": "string",
+            "title": "User template",
+            "description": "Template string supporting mustache-style replacements."
+          }
+        },
+        "required": ["userTemplate"],
+        "additionalProperties": false
+      },
+      "runtime": {
+        "executor": "client",
+        "handler": "@elements/prompt/render"
+      }
+    },
+    {
+      "id": "dataset@1.0.0",
+      "type": "dataset",
+      "version": "1.0.0",
+      "label": "Dataset Node",
+      "icon": "database",
+      "category": "data",
+      "inputs": {},
+      "outputs": {
+        "rows": {
+          "label": "Rows",
+          "description": "Structured dataset rows emitted as JSON records.",
+          "dataType": "table",
+          "required": true
+        }
+      },
+      "propsSchema": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "enum": ["cosmos", "sqlite", "upload"],
+            "default": "sqlite"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query",
+            "description": "SQL or filter expression depending on source."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000,
+            "default": 100
+          }
+        },
+        "required": ["source"],
+        "additionalProperties": false
+      },
+      "runtime": {
+        "executor": "server",
+        "handler": "api.elements.dataset.execute"
+      }
+    }
+  ]
+}

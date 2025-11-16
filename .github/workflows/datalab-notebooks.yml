@@ -1,79 +1,109 @@
-name: Full Test Suite
+name: Stability Gate
 
 on:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  schedule:
+    - cron: "0 2 * * 0"
 
 jobs:
-  tests:
-    name: Backend + DataLab + Frontend
+  backend-tests:
+    name: Backend pytest
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
-      - name: Install backend dependencies
-        run: python -m pip install -r chatai/backend/requirements.txt
-
-      - name: Install DataLab dependencies
-        run: python -m pip install -r datalab/requirements.txt
-
-      - name: Backend pytest suite
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r chatai/backend/requirements.txt
+      - name: Run backend tests
         working-directory: chatai/backend
         run: python -m pytest -q
 
-      - name: Papermill notebook tests
-        run: python -m pytest tests/test_notebooks.py -q
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+  datalab-tests:
+    name: DataLab + notebooks
+    runs-on: ubuntu-latest
+    needs: backend-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: chatai/frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        working-directory: chatai/frontend
-        run: npm ci
-
-      - name: Frontend lint
-        working-directory: chatai/frontend
-        run: npm run lint
-
-      - name: Run Vitest unit tests
-        working-directory: chatai/frontend
-        run: npm run test
-
-      - name: Playground widget tests
-        working-directory: chatai/frontend
-        run: npm run test:playground
-
-      - name: Type-check frontend
-        working-directory: chatai/frontend
-        run: npm run build
-
-      - name: Storybook UI build
-        working-directory: chatai/frontend
-        run: npm run storybook:build
-
-      - name: Control Center Storybook build
-        working-directory: chatai/frontend
-        run: npm run storybook:playground
-
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r datalab/requirements.txt
+      - name: DataLab unit tests
+        run: python -m pytest datalab/tests -q
+      - name: Notebook regression tests
+        run: python -m pytest tests/test_notebooks.py -q
       - name: Upload executed notebooks
         uses: actions/upload-artifact@v4
         with:
           name: papermill-notebooks
           path: datalab/notebooks/_papermill/*.ipynb
           if-no-files-found: ignore
+
+  frontend-qa:
+    name: Frontend lint + tests + build
+    runs-on: ubuntu-latest
+    needs: backend-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: chatai/frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: chatai/frontend
+        run: npm ci
+      - name: Lint
+        working-directory: chatai/frontend
+        run: npm run lint
+      - name: Vitest suite
+        working-directory: chatai/frontend
+        run: npm run test -- --runInBand
+      - name: Playground tests
+        working-directory: chatai/frontend
+        run: npm run test:playground
+      - name: Production build
+        working-directory: chatai/frontend
+        run: npm run build
+
+  storybook-builds:
+    name: Storybook artifacts
+    runs-on: ubuntu-latest
+    needs: frontend-qa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        working-directory: chatai/frontend
+        run: npm ci
+      - name: Storybook (app)
+        working-directory: chatai/frontend
+        run: npm run storybook:build
+      - name: Storybook (control center)
+        working-directory: chatai/frontend
+        run: npm run storybook:playground
+
+  integrity-scan:
+    name: Integrity checkpoint status
+    runs-on: ubuntu-latest
+    needs: [backend-tests, datalab-tests, frontend-qa]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - name: Run integrity status
+        run: python scripts/project_integrity.py status | tee integrity-status.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: integrity-status
+          path: integrity-status.json

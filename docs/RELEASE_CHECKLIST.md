@@ -11,10 +11,16 @@ Use this checklist any time you prepare an internal drop or GitHub release. It c
 ## 2. Verify automation locally
 
 ```bash
-# Backend + notebooks
+# Backend
 python -m pip install -r chatai/backend/requirements.txt
-python -m pip install -r datalab/requirements.txt
 python -m pytest chatai/backend/tests -q
+
+# Telemetry + notebooks
+python -m pip install -r datalab/requirements.txt
+python -m datalab.scripts.search_telemetry ingest --log-path logs/search-history.jsonl --db-path data/search_telemetry.db
+python -m papermill datalab/notebooks/search_telemetry.ipynb datalab/notebooks/_papermill/search_telemetry-release.ipynb \
+	-p SEARCH_DB_PATH data/search_telemetry.db \
+	-p TELEMETRY_LOG_PATH logs/search-history.jsonl
 python -m pytest tests/test_notebooks.py -q
 
 # Frontend
@@ -27,6 +33,8 @@ npm run build
 npm run storybook:build
 npm run storybook:playground
 ```
+
+> `scripts/release_checklist.ps1` runs the telemetry ingest + Papermill snapshot automatically. Pass `-SkipTelemetry` when you need to bypass it temporarily (for example, when log files are unavailable).
 
 ## 3. Collect artifacts
 
@@ -54,8 +62,17 @@ git push origin v1.0.0
 Equivalent PowerShell shortcut:
 
 ```powershell
-pwsh -File scripts/lab-control.ps1 -ReleaseVersion 1.0.0 -ReleasePush
+pwsh -File scripts/lab-control.ps1 -ReleaseBump patch -ReleasePipeline -ReleaseDryRun
+pwsh -File scripts/lab-control.ps1 -ReleaseBump minor -ReleasePipeline -ReleaseChangelogTemplate docs/CHANGELOG_TEMPLATE.md -ReleaseChangelogSection Highlights -ReleaseChangelogSection Ops -ReleaseAsJob
 ```
+
+Flags:
+
+- `-ReleaseBump patch|minor|major` derives the next semantic version from Git tags; pass `-ReleaseVersion` when you need an explicit value instead.
+- `-FinalizeChangelog` (or `-ReleaseChangelogTemplate docs/CHANGELOG_TEMPLATE.md -ReleaseChangelogSection ...`) inserts a templated entry at the top of `CHANGELOG.md`, replacing `{{VERSION}}` / `{{DATE}}` tokens automatically.
+- `-RunTests` executes `scripts/release_checklist.ps1`, which runs backend tests, notebook tests, and the frontend lint/test/build suite (use `scripts/release_checklist.ps1 -Skip*` switches to trim scope).
+- `-UpdateIntegrity` writes a new checkpoint via `project_integrity.py checkpoint --tag release` after the tests succeed.
+- `-ReleasePipeline` wraps all helpers (tests, changelog, integrity, push) and can run as a background PowerShell job via `-ReleaseAsJob`. Combine it with `-ReleaseSkipChangelog`, `-ReleaseSkipTests`, or `-ReleaseSkipPush` for dry runs.
 
 ## 5. Publish
 

@@ -15,9 +15,30 @@ venv/
 **/dist/
 **/build/
 
+# Editors / tooling
+.vscode/
+
+# Integrity + diagnostics artifacts
+.project_integrity/
+datalab/_papermill/
+datalab/notebooks/_papermill/
+**/.ipynb_checkpoints/
+**/*.out.ipynb
+datalab/notebooks/DB_PATH
+
+# Local data caches
+data/*.db
+
+# Misc Python env leftovers
+**/.venv*/
+
 # DataLab runtime state
 .labctl/
 backups/
+data/logs/
+!data/logs/.gitkeep
+logs/
+!logs/.gitkeep
 
 # OS files
 .DS_Store

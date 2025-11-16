@@ -16,6 +16,7 @@ Tags align code comments, Ops Deck telemetry, DataLab notebooks, and the integri
 | `tail-log` | Tail log integrations (UI + backend) | Full stack |
 | `notebook` | DataLab notebooks, widgets | Data scientists |
 | `metrics` | `datalab/scripts`, telemetry helpers | Data scientists |
+| `telemetry` | Search/Ops telemetry ingestion, dashboards, notebooks | Data scientists + Platform |
 | `integrity` | Hash/checkpoint tooling | Platform maintainers |
 | `config` | Config manifests, policy files | Platform maintainers |
 | `docs` | Markdown docs, tutorials, installation | Docs guild |

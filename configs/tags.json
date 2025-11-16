@@ -10,6 +10,7 @@
     { "name": "tail-log", "description": "Tail log ingestion and UI", "owners": ["fullstack"] },
     { "name": "notebook", "description": "Jupyter notebooks", "owners": ["datalab"] },
     { "name": "metrics", "description": "Analytics helpers, scripts", "owners": ["datalab"] },
+  { "name": "telemetry", "description": "Search/Ops telemetry ingestion and dashboards", "owners": ["datalab", "platform"] },
     { "name": "integrity", "description": "Hash/checkpoint tooling", "owners": ["platform"] },
     { "name": "config", "description": "Configuration manifests/policies", "owners": ["platform"] },
     { "name": "docs", "description": "Documentation content", "owners": ["docs"] },

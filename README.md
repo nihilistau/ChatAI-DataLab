@@ -83,7 +83,7 @@ See `docs/FILE_SYSTEM.md` for the authoritative outline, guardrails, and naming 
 - **Backend API**: `cd chatai/backend && .venv/Scripts/uvicorn app.main:app --reload`.
 - **Ops Deck**: automatically polls `/api/ops/status` and surfaces controlplane actions. Tail logs funnel to both UI and DataLab notebook (#ops tag).
 - **Control Center Playground**: `npm run playground:dev` inside `chatai/frontend` (or `python scripts/control_center.py playground`) to launch the multi-widget control UI backed by `/api/control/*` endpoints.
-- **Control Center CLI**: `python scripts/control_center.py start|stop|status|notebook` controls Lab Orchestrator services, opens the Playground, or executes the new Papermill notebook without leaving the terminal.
+- **Control Center CLI**: `python scripts/control_center.py start|stop|status|notebook` controls Lab Orchestrator services, opens the Playground, or executes the new Papermill notebook without leaving the terminal. Use `python scripts/control_center.py elements catalog|validate|run` to list Elements nodes, validate graphs/presets, and execute DAGs locally via the shared GraphExecutor.
 - **Storybook builds**: `npm run storybook:build` for the entire component catalog and `npm run storybook:playground` for the Control Center-only subset used in Chromatic/regression pipelines.
 - **Hypothesis Workflow Control Lab notebook**: open `datalab/notebooks/hypothesis_control.ipynb` for experiment design, voting, telemetry charts, and ops log streaming.
 
@@ -130,6 +130,21 @@ Prefer a single entrypoint? The LabControl wrapper now proxies the same presets:
 pwsh -ExecutionPolicy Bypass -File scripts/lab-control.ps1 -SearchPreset repo-todos -EmitStats
 pwsh -File scripts/lab-control.ps1 -SearchPattern "http://" -Regex -FileProfile frontend -IncludeNodeModules
 ```
+
+When the JSONL history grows too large, call the Librarian helper to archive + prune before refreshing telemetry:
+
+```powershell
+pwsh -File scripts/lab-control.ps1 -RunSearchLibrarian -SearchHistoryOlderThanDays 30 -SearchHistoryKeep 2000 -RunSearchTelemetryIngestion
+```
+
+## Search telemetry ingestion & Ops Deck trends
+
+- `datalab/scripts/search_telemetry.py ingest --log-path logs/search-history.jsonl --db-path data/search_telemetry.db` hydrates the JSONL search history into normalized SQLite tables (`search_runs`, `search_daily_metrics`).
+- `pwsh -File scripts/lab-control.ps1 -RunSearchTelemetryIngestion` calls the same helper so Ops techs can refresh dashboards without leaving LabControl. Add `-SearchTelemetryLogPath` / `-SearchTelemetryDbPath` to target alternate paths.
+- `datalab/notebooks/search_telemetry.ipynb` loads the SQLite file, charts daily sweep volume vs. findings, and highlights noisy presets. Pass `SEARCH_DB_PATH` (and optionally `TELEMETRY_LOG_PATH`) via Papermill or the Control Center notebook runner to keep CI deterministic.
+- The ingestion job is idempotent: it hashes each JSON line before inserting, recomputes the daily aggregates, and emits the inserted/duplicate counts so Ops Deck tiles can track freshness.
+
+Tie this into the Ops Deck by pointing the widgets at `data/search_telemetry.db`—they now have a steady feed of hygiene sweeps, match densities, and latency stats without reprocessing the raw JSON lines every time.
 
 ## Documentation suite
 
@@ -186,9 +201,15 @@ These commands align with `docs/RELEASE_CHECKLIST.md` and ensure the annotated t
 Prefer a single entrypoint? Use LabControl:
 
 ```powershell
-pwsh -ExecutionPolicy Bypass -File scripts/lab-control.ps1 -ReleaseVersion 1.0.0 -ReleaseDryRun
-pwsh -File scripts/lab-control.ps1 -ReleaseVersion 1.0.0 -ReleasePush
+pwsh -ExecutionPolicy Bypass -File scripts/lab-control.ps1 -ReleaseBump patch -ReleasePipeline -ReleaseDryRun
+pwsh -File scripts/lab-control.ps1 -ReleaseBump minor -ReleasePipeline -ReleaseChangelogTemplate docs/CHANGELOG_TEMPLATE.md -ReleaseChangelogSection Highlights -ReleaseChangelogSection Ops -ReleaseAsJob
+pwsh -File scripts/lab-control.ps1 -ReleaseVersion 1.1.0 -ReleasePush -ReleaseFinalizeChangelog -ReleaseRunTests -ReleaseUpdateIntegrity
 ```
+
+- `-ReleaseBump patch|minor|major` auto-derives the next semantic version from Git tags (defaults to patch when using `-ReleasePipeline`).
+- `-ReleasePipeline` wraps `Publish-LabRelease` with the full checklist: changelog templating, test suite, integrity checkpoint, push, and optional background job execution (`-ReleaseAsJob`). Use `-ReleaseSkipChangelog`, `-ReleaseSkipTests`, or `-ReleaseSkipPush` for targeted dry runs.
+- `-ReleaseChangelogTemplate docs/CHANGELOG_TEMPLATE.md -ReleaseChangelogSection <name>` injects structured sections into `CHANGELOG.md`, keeping Ops + DataLab notes aligned across releases.
+- `-RunSearchTelemetryIngestion` can run before tagging so automation dashboards always reflect the latest hygiene sweep data.
 
 ## Tagging + comment standards
 
