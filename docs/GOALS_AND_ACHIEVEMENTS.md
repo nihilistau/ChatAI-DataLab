@@ -1,7 +1,7 @@
 # Goals & Achievements Log
 
-> **Last updated:** 2025-11-16 04:45 UTC  
-> **Current milestone:** Framework v1.0.0 (complete)  
+> **Last updated:** 2025-11-16 13:10 UTC  
+> **Current milestone:** Control Capsules bootstrap (in flight)  
 > **Scope:** Every implemented capability is logged below. New work enters the “Ongoing Additions” table first, then graduates into Project Overview + Expanded Functionality once shipped.
 
 ## Completed Milestones
@@ -9,6 +9,7 @@
 | Date (UTC) | Milestone | Summary | Primary Artifacts |
 | --- | --- | --- | --- |
 | 2025-11-16 | Stability gate 1.0.1 | Freeze closed with full regression evidence, Search Toolkit sweep automation, checkpoint `0002`, and tag `v1.0.1-stability.20251116`. | `docs/STABILITY_WORKFLOW.md`, `.github/workflows/datalab-notebooks.yml`, `.github/workflows/search-toolkit-sweep.yml`, `tests/test_notebooks.py` |
+| 2025-11-16 | Control Capsule handbook | Codified the platform vs. capsule modes, release rules, and environment playbooks so new contributors can ship capsules solo. | `docs/OPERATIONS_HANDBOOK.md`, `README.md`, `docs/RELEASE_CHECKLIST.md` |
 | 2025-05-01 | Telemetry capture baseline | PromptRecorder streams keystroke+pause metadata and ships it with `/api/chat` submissions. | `chatai/frontend/src/components/PromptRecorder.tsx`, `chatai/backend/app/api/routes.py` |
 | 2025-07-12 | DataLab parity | Reproducible notebooks + metrics helpers mirrored backend schemas, ensuring `interactions.db` insights stay in-repo. | `datalab/notebooks/*`, `datalab/scripts/metrics.py` |
 | 2025-10-03 | Control plane consolidation | PowerShell + Bash LabControl surfaces unified job orchestration, backups, and dependency installs. | `scripts/powershell/LabControl.psm1`, `scripts/lab-control.ps1`, `scripts/labctl.sh` |
@@ -26,6 +27,8 @@
 | Managed database option | Promote SQLite to Cosmos DB/Postgres with migration tooling + HPK-aware schemas. | Backend/Data | Evaluating RU + partition strategy; schema ready for migration. |
 | Metrics package | Factor reusable metrics helpers into a Python package consumed by notebooks + backend reporting jobs. | DataLab | Draft package layout outlined; awaiting packaging checklist. |
 | Notebook templates | Ship templated notebooks (Interaction summary, Pause heatmap, Prompt rewrite tree) for analysts. | DataLab | Content plan complete; notebook scaffolds pending. |
+| Capsule manifest & loader | Introduce `configs/capsules/*.json`, LabControl verbs, and snapshots so new environments can be saved/loaded on demand. | Platform/Control plane | Spec lives in `docs/OPERATIONS_HANDBOOK.md §10`; implementation slated for v1.1.0. |
+| Bootstrap capsule (default environment) | Ship the onboarding capsule that configures credentials, runs health checks, and guides new builders through creating their first capsule. | Platform/DataLab | Needs template notebooks + Control Center layout; target after Control Capsule handbook adoption. |
 
 ## Change Logging Rules
 

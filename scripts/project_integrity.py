@@ -23,6 +23,7 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 import sys
 import textwrap
 from dataclasses import dataclass
@@ -112,6 +113,42 @@ class IntegrityManager:
 
     def save_manifest(self, manifest: dict) -> None:
         MANIFEST_PATH.write_text(json.dumps(manifest, indent=2))
+
+    def load_checkpoint_manifest(self, checkpoint_id: str) -> dict:
+        path = CHECKPOINT_DIR / f"{checkpoint_id}.json"
+        if not path.exists():
+            raise RuntimeError(f"Checkpoint {checkpoint_id} not found")
+        return json.loads(path.read_text())
+
+    def resolve_baseline_manifest(self, baseline: str) -> dict:
+        """Return a manifest snapshot for a checkpoint id or tag name."""
+
+        path = CHECKPOINT_DIR / f"{baseline}.json"
+        if path.exists():
+            return json.loads(path.read_text())
+
+        matches: list[tuple[str, dict]] = []
+        for candidate in CHECKPOINT_DIR.glob("*.json"):
+            data = json.loads(candidate.read_text())
+            if data.get("meta", {}).get("tag") == baseline:
+                matches.append((candidate.stem, data))
+        if not matches:
+            git_target = f"{baseline}:.project_integrity/index.json"
+            try:
+                result = subprocess.run(
+                    ["git", "show", git_target],
+                    cwd=self.root,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+            except subprocess.CalledProcessError as exc:
+                raise RuntimeError(
+                    f"Baseline '{baseline}' not found. Provide a checkpoint id (e.g. 0002) or a tag recorded in integrity checkpoints."
+                ) from exc
+            return json.loads(result.stdout)
+        matches.sort(key=lambda item: item[0])
+        return matches[-1][1]
 
     # ------------------------------------------------------------------
     # Scanning + hashing
@@ -265,8 +302,11 @@ class IntegrityManager:
         self.write_checkpoint(checkpoint_id, manifest, tag=None, milestone=None, reason=reason)
         print(f"Initialized manifest with checkpoint {checkpoint_id}")
 
-    def cmd_status(self, *, tags: list[str] | None) -> None:
-        manifest = self.load_manifest()
+    def cmd_status(self, *, tags: list[str] | None, baseline: str | None) -> None:
+        if baseline:
+            manifest = self.resolve_baseline_manifest(baseline)
+        else:
+            manifest = self.load_manifest()
         if not manifest["files"]:
             print("Manifest empty. Run init first.")
             return
@@ -410,6 +450,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     status_cmd = sub.add_parser("status", help="Show diff between disk and manifest")
     status_cmd.add_argument("--tags", default=None, help="Comma-separated tag filters")
+    status_cmd.add_argument(
+        "--baseline",
+        default=None,
+        help="Checkpoint id or tag to diff against instead of the local manifest",
+    )
 
     checkpoint_cmd = sub.add_parser("checkpoint", help="Create a new checkpoint + backup")
     checkpoint_cmd.add_argument("--tag", default=None)
@@ -440,7 +485,7 @@ def main(argv: list[str] | None = None) -> None:
         manager.cmd_init(reason=args.reason)
     elif args.command == "status":
         tags = args.tags.split(",") if args.tags else None
-        manager.cmd_status(tags=tags)
+        manager.cmd_status(tags=tags, baseline=args.baseline)
     elif args.command == "checkpoint":
         manager.cmd_checkpoint(tag=args.tag, milestone=args.milestone, reason=args.reason)
     elif args.command == "verify":

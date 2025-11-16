@@ -1,6 +1,6 @@
 # ChatAI · DataLab
 
-Instrument every keystroke inside ChatAI, relay it through FastAPI, and explore the signal-rich corpus in DataLab. This mono-repo now ships with opinionated documentation, tagging standards, and an integrity toolchain so you can bootstrap, audit, and evolve the stack with confidence.
+Instrument every keystroke inside ChatAI, relay it through FastAPI, and explore the signal-rich corpus in DataLab. This mono-repo now ships with opinionated documentation, tagging standards, and an integrity toolchain so you can bootstrap, audit, and evolve the stack with confidence. We now treat each deployable trio of frontend + backend + DataLab as a **Control Capsule**—the building block users clone to create their own environments.
 
 > **Status:** Framework v1.0.0 is complete (snapshot 2025-11-15). Ongoing additions and milestone notes live in `docs/GOALS_AND_ACHIEVEMENTS.md` and the “Expanded Functionality” table inside `PROJECT_OVERVIEW.md`.
 
@@ -158,6 +158,7 @@ Tie this into the Ops Deck by pointing the widgets at `data/search_telemetry.db`
 | `docs/RELEASE_CHECKLIST.md` | Pre-release gate list (tests, integrity, changelog, automation) |
 | `docs/ELEMENTS_SPEC.md` | Architecture + scope for the Elements widget + node system |
 | `docs/GOALS_AND_ACHIEVEMENTS.md` | Rolling log for completed milestones + in-flight additions |
+| `docs/OPERATIONS_HANDBOOK.md` | Human-first overview of Control Capsules, workflows, releases, and troubleshooting |
 
 ## Integrity + versioning guardrails
 

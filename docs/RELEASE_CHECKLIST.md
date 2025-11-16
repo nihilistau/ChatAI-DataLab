@@ -5,7 +5,7 @@ Use this checklist any time you prepare an internal drop or GitHub release. It c
 ## 1. Update metadata
 
 - [ ] Review `CHANGELOG.md` and add an entry that captures user-facing changes.
-- [ ] Run `python scripts/project_integrity.py status` and ensure only intentional files are dirty.
+- [ ] Run `python scripts/project_integrity.py status --baseline <last-tag>` to see the exact delta versus the previous release checkpoint. (Pass either a checkpoint id such as `0002` or a git tag like `v1.0.1-stability.20251116`.)
 - [ ] If new assets or configs were added, run `python scripts/project_integrity.py checkpoint --tag release --reason "vX.Y.Z"` to snapshot them.
 
 ## 2. Verify automation locally
@@ -38,7 +38,10 @@ npm run storybook:playground
 
 ## 3. Collect artifacts
 
-- [ ] Copy the freshly executed notebooks from `datalab/notebooks/_papermill/` into the release notes (CI also uploads them automatically).
+- [ ] Zip and attach `chatai/frontend/dist/` (`control-center-dist.zip`).
+- [ ] Zip and attach `chatai/frontend/storybook-static/` and `chatai/frontend/storybook-static-playground/` (`storybook-static.zip`, `storybook-static-playground.zip`).
+- [ ] Copy the freshly executed notebooks from `datalab/notebooks/_papermill/` (Search Telemetry, Ops Response Playbook, Widget Showcase) and link them in the release body.
+- [ ] Mention the operator scripts added or updated in this release (`scripts/lab-bootstrap.ps1`, `scripts/release_checklist.ps1`, `scripts/lab-control.ps1`, etc.) so downstream users know which automation changed.
 - [ ] Capture screenshots/GIFs of the Playground UI or Storybook stories if visual changes were made.
 
 ## 4. Git + GitHub hygiene
@@ -77,6 +80,7 @@ Flags:
 ## 5. Publish
 
 - [ ] Draft a GitHub release pointing at the new tag. Paste the `CHANGELOG` entry plus any notebook artifacts or screenshots.
+- [ ] In the release body, explicitly link the Search Telemetry, Ops Response Playbook, and Widget Showcase notebooks along with the `LabControl` helper scripts installers so operators can replay evidence.
 - [ ] Mark the release as "Latest" once CI passes.
 
 Following these steps keeps GitHub releases reproducible and aligned with the automation wired into this repository.
