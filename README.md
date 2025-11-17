@@ -1,25 +1,28 @@
-# ChatAI · DataLab
+# ChatAI · DataLab - Change to Control Capsule(was PlayGround)
 
-Instrument every keystroke inside ChatAI, relay it through FastAPI, and explore the signal-rich corpus in DataLab. This mono-repo now ships with opinionated documentation, tagging standards, and an integrity toolchain so you can bootstrap, audit, and evolve the stack with confidence. We now treat each deployable trio of frontend + backend + DataLab as a **Control Capsule**—the building block users clone to create their own environments.
+# This {
+This {Instrument every keystroke inside ChatAI, relay it through FastAPI, and explore the signal-rich corpus in DataLab(KItchen). } (move to the recreated playground/capsule) This{ This mono-repo now ships with opinionated documentation, tagging standards, and an integrity toolchain so you can bootstrap, audit, and evolve the stack with confidence. We now treat each deployable trio of frontend + backend + DataLab(Kitchen) as a **Control Capsule**(was PlayGround)—the building block users clone to create their own environments.
+}
+
 
 > **Status:** Framework v1.0.0 is complete (snapshot 2025-11-15). Ongoing additions and milestone notes live in `docs/GOALS_AND_ACHIEVEMENTS.md` and the “Expanded Functionality” table inside `PROJECT_OVERVIEW.md`.
-
+This {
 ## Why this project exists
-
-- **Full-fidelity capture** – pause telemetry, edit history, and prompt context stay linked to each inference.
+This {
+- **Full-fidelity capture** – pause telemetry, edit history, and prompt context stay linked to each inference. } (move to it's playground/capsule template)
 - **Insight loop** – DataLab notebooks and scripts stay in-repo, keeping EDA reproducible.
 - **Operational parity** – PowerShell + Bash control planes and Ops Deck widgets expose the same services/logs.
-- **Governed change** – Hash-based integrity snapshots, checkpoints, and repair flows guard the codebase.
+- **Governed change** – Hash-based integrity snapshots, checkpoints, and repair flows guard the codebase. } (is good, expand, more about Capsules, one shot prompt to capsule, etc)
 
 ## Feature highlights
 
 | Area | Highlights |
 | --- | --- |
-| Frontend (`chatai/frontend`) | React + Vite command center with Prompt Recorder, Ops Deck, Tail log, Artifact shelf, dynamic themes, **new Elements canvas preview** |
-| Backend (`chatai/backend`) | FastAPI relay, SQLAlchemy models, pluggable LLM client, artifact + tail-log APIs |
+| Frontend (`frontend`) | React + Vite command center with Prompt Recorder, Ops Deck, Tail log, Artifact shelf, dynamic themes, **new Elements canvas preview** |
+| Backend (`backend`) | FastAPI relay, SQLAlchemy models, pluggable LLM client, artifact + tail-log APIs |
 | Control plane (`controlplane/`) | Cross-platform orchestrator that powers the Ops Deck and CLI utilities |
-| DataLab (`datalab/`) | Ready-to-run notebooks (see `hypothesis_control.ipynb`), metrics scripts, pinned requirements |
-| Tooling | `scripts/setup.sh`, PowerShell `LabControl`, `labctl.sh`, and the new `project_integrity.py` guards |
+| Kitchen (`kitchen/`) | Ready-to-run notebooks (see `hypothesis_control.ipynb`), metrics scripts, pinned requirements |
+| Tooling | `scripts/setup.sh`, This{PowerShell `LabControl`, `labctl.sh`,} (change to CapControl & capctl) and the new `project_integrity.py` guards |
 
 ## Status tracker
 
@@ -34,7 +37,7 @@ Instrument every keystroke inside ChatAI, relay it through FastAPI, and explore 
 | --- | --- |
 | TODO sweep | Searches across `chatai/frontend/src`, `chatai/backend/app`, and docs returned **no first-party `TODO` or "unimplemented" references** (SDK/vendor hits only). |
 | Next candidates | Focus future work on §7 roadmap items: structured logging/observability, WebSocket streaming, managed DB migration, and reusable DataLab metric packages. |
-
+This {
 ## Repository map
 
 ```
@@ -47,7 +50,7 @@ configs/        # manifests, tagging + guardrail config
 backups/        # integrity snapshots land here
 .datalab/       # notebooks + analysis assets
 ```
-
+}(update)
 See `docs/FILE_SYSTEM.md` for the authoritative outline, guardrails, and naming conventions.
 
 ## Quick start
@@ -76,7 +79,7 @@ See `docs/FILE_SYSTEM.md` for the authoritative outline, guardrails, and naming 
    ```bash
    python scripts/project_integrity.py init --reason "initial clone"
    ```
-
+This {
 ## Working in the stack
 
 - **Frontend dev server**: `cd chatai/frontend && npm install && npm run dev -- --host` (or use LabControl jobs).
@@ -231,5 +234,5 @@ Tags (documented in `docs/TAGS.md`) are parsed by the integrity CLI so Ops Deck,
 2. Extend the data capture tests and DataLab notebooks with the provided templates.
 3. Capture release notes via `python scripts/project_integrity.py checkpoint --tag release --reason "describe change"`.
 4. Follow `docs/RELEASE_CHECKLIST.md` before tagging a release so GitHub artifacts always match the automation surface.
-
+} {ensure is correct, remove mentions of chatai and datalab, etc. clean up, rework. reword. create a new milestone. i'm going to call it. backontrack. we acknowledge the work before, but we archieve the commits, description, goal etc, and concentrate on what we have implemented, goal of framework. possibilites etc. keep it mostly like now, but we just want an alignment bump. so everything can be in sync. a new baseline. a new begining, clean out the old)
 Questions? Start with `PROJECT_OVERVIEW.md`, then dive into the docs above. This repo is intentionally verbose so every environment—from Codespaces to bare-metal servers—can reproduce the same experience.
