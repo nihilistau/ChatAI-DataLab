@@ -2,7 +2,7 @@
 
 # This {
 This {Instrument every keystroke inside ChatAI, relay it through FastAPI, and explore the signal-rich corpus in DataLab(KItchen). } (move to the recreated playground/capsule) This{ This mono-repo now ships with opinionated documentation, tagging standards, and an integrity toolchain so you can bootstrap, audit, and evolve the stack with confidence. We now treat each deployable trio of frontend + backend + DataLab(Kitchen) as a **Control Capsule**(was PlayGround)—the building block users clone to create their own environments.
-}
+} (is good, update to new branding, status, etc)
 
 
 > **Status:** Framework v1.0.0 is complete (snapshot 2025-11-15). Ongoing additions and milestone notes live in `docs/GOALS_AND_ACHIEVEMENTS.md` and the “Expanded Functionality” table inside `PROJECT_OVERVIEW.md`.
