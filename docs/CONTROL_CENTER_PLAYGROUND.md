@@ -1,6 +1,6 @@
 # Control Center + Playground System
 
-This document captures the end-to-end design for the new automation layer that stitches together FastAPI, React/Storybook, Papermill notebooks, and the Lab Orchestrator. The goal is to provide a repeatable "mission control" experience where three long-running services stay in sync (FastAPI backend, legacy Ops Deck frontend, and the new Playground UI) while DataLab notebooks run supervised pipelines.
+This document captures the end-to-end design for the new automation layer that stitches together FastAPI, React/Storybook, Papermill notebooks, and the Lab Orchestrator. The goal is to provide a repeatable "mission control" experience where three long-running services stay in sync (FastAPI backend, legacy Ops Deck frontend, and the new Playground UI) while Kitchen notebooks run supervised pipelines.
 
 ---
 
@@ -41,7 +41,7 @@ This document captures the end-to-end design for the new automation layer that s
 | `app/api/control.py` | Aggregate orchestrator snapshot, stream `.labctl` logs, trigger papermill runs, store widget presets. | Uses `asyncio.create_task` to run notebooks without blocking responses.
 | `scripts/control_center.py` | CLI for `start-services`, `stop-services`, `status`, `storybook`, `papermill`, and `playground` preview. | Wraps `LabOrchestrator` + npm scripts.
 | Playground Vite entry | Renders `ControlCenterApp`, polls `/api/control/status`, `/api/control/logs`, `/api/control/notebooks`, and provides command palette. | Lives beside existing Ops Deck UI but builds into a separate bundle.
-| New notebook | Queries `/api/control/status`, enriches with SQLite insights, renders Plotly timeline & RU chart. | Stored at `datalab/notebooks/control_center_playground.ipynb`.
+| New notebook | Queries `/api/control/status`, enriches with SQLite insights, renders Plotly timeline & RU chart. | Stored at `kitchen/notebooks/control_center_playground.ipynb`.
 
 ---
 
@@ -53,11 +53,11 @@ This document captures the end-to-end design for the new automation layer that s
 
 ### 3.2 `/api/control/logs`
 - **GET** returns `{ service: str, lines: [str] }` for a single service.
-- Valid `service`: `backend`, `frontend`, `datalab`, `playground`.
+- Valid `service`: `backend`, `frontend`, `kitchen`, `playground`.
 
 ### 3.3 `/api/control/notebooks`
 - **GET** lists previous Papermill jobs (cached in-memory).
-- **POST** body `{"name": "control_center_playground", "parameters": {...}}` kicks off an async Papermill execution under `datalab/notebooks/_papermill/<name>-<stamp>.ipynb`.
+- **POST** body `{"name": "control_center_playground", "parameters": {...}}` kicks off an async Papermill execution under `kitchen/notebooks/_papermill/<name>-<stamp>.ipynb`.
 
 ### 3.4 `/api/control/widgets`
 - **GET** returns curated sample data (LLM latency sparkline, RU budgets, synthetic keystroke totals) used by placeholder widgets.
@@ -82,7 +82,7 @@ Each widget is an independent React component with a dedicated Storybook story a
 
 - Notebook stored in git with lightweight cells (SQLite queries + HTTP requests).
 - Papermill parameters: `DB_PATH`, `CONTROL_STATUS_URL`, `OUTPUT_DIR`.
-- Execution uses repo virtualenv (Papermill already installed via `datalab/requirements.txt`).
+- Execution uses repo virtualenv (Papermill already installed via `kitchen/requirements.txt`).
 - Tests: `tests/test_notebooks.py` param list now includes the new notebook. Jobs run in CI as part of the Full Test Suite.
 
 ---
@@ -91,9 +91,10 @@ Each widget is an independent React component with a dedicated Storybook story a
 
 1. `scripts/control_center.py start` boots backend + both Vite entrypoints via the Lab Orchestrator and writes consolidated status JSON to `.labctl/state/aggregate.json`.
 2. `scripts/control_center.py playground` proxies to `npm run playground:dev`, keeping the widget UI in sync with backend data.
-3. GitHub workflow adds two steps:
+3. GitHub workflow adds three steps:
    - `npm run test:playground` (Vitest suite for new widgets).
    - `npm run storybook:playground` (control-only Storybook build reused for Chromatic/visual regressions).
+   - `npm run chromatic` (rebuilds the playground Storybook subset and uploads to Chromatic; requires `CHROMATIC_PROJECT_TOKEN`).
 4. Workflow artifact uploads executed notebooks from `_papermill/` for traceability.
 
 ---

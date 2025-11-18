@@ -1,0 +1,52 @@
+{
+  "generated_at": "2025-11-17T05:57:48.004594+00:00",
+  "manifest_results": [
+    {
+      "path": "manifests\\sample.json",
+      "sections": 1,
+      "widgets": 2,
+      "actions": 1,
+      "tenant": "demo-tenant",
+      "playground": "welcome-control"
+    }
+  ],
+  "manifest_errors": [],
+  "control_center_snapshot": {
+    "prompt_count": 25,
+    "service_states": [
+      "backend (windows): unknown",
+      "frontend (windows): unknown",
+      "datalab (linux): unknown"
+    ],
+    "sample_latency_ms": 29,
+    "lab_root": "D:\\Files\\Code 3\\ChatAI-DataLab",
+    "fallback_reason": "Control Center API unavailable (<urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>)",
+    "recent_diagnostics": [
+      {
+        "timestamp": "2025-11-17T04:29:50.343872+00:00",
+        "category": "control-center",
+        "message": "Snapshot written",
+        "data": {
+          "path": "D:\\Files\\Code 3\\ChatAI-DataLab\\datalab\\_papermill\\control_center_snapshot.json"
+        }
+      },
+      {
+        "timestamp": "2025-11-17T05:03:10.135357+00:00",
+        "category": "control-center",
+        "message": "Control status fallback",
+        "data": {
+          "url": "http://localhost:8000/api/control/status",
+          "error": "<urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>"
+        }
+      },
+      {
+        "timestamp": "2025-11-17T05:03:10.153174+00:00",
+        "category": "control-center",
+        "message": "Snapshot written",
+        "data": {
+          "path": "D:\\Files\\Code 3\\ChatAI-DataLab\\datalab\\notebooks\\_papermill\\control_center_snapshot.json"
+        }
+      }
+    ]
+  }
+}

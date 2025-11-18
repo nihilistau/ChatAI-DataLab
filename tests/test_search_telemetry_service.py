@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from chatai.backend.app.services.search_telemetry import get_search_telemetry_summary
-from datalab.scripts import search_telemetry as telemetry
+from playground.backend.app.services.search_telemetry import get_search_telemetry_summary
+from kitchen.scripts import search_telemetry as telemetry
 
 
 def _write_entries(path: Path, entries: list[dict]) -> None:

@@ -1,0 +1,5 @@
+# Kitchen requirements
+# Rename from datalab/requirements.txt
+
+requests>=2.32.3
+pyarrow>=17.0.0

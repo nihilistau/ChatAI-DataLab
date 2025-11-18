@@ -1,0 +1,46 @@
+{
+  "generated_at": "2025-11-18T00:35:43.485430+00:00",
+  "source_log": "D:\\Files\\Code 3\\ChatAI-DataLab\\logs\\search-history.jsonl",
+  "total_runs": 1,
+  "runs_with_matches": 1,
+  "runs_last_24h": 0,
+  "avg_duration_ms": 977.0,
+  "avg_match_density": 0.0157,
+  "last_ingest_at": "2025-11-15T13:50:46.784818+00:00",
+  "match_rate": 1.0,
+  "top_patterns": [
+    {
+      "pattern": "GraphExecutor",
+      "runs": 1,
+      "total_matches": 14,
+      "avg_files_scanned": 889.0
+    }
+  ],
+  "daily_metrics": [
+    {
+      "event_date": "2025-11-15",
+      "runs": 1,
+      "files_scanned": 889,
+      "matches": 14,
+      "runs_with_matches": 1,
+      "avg_duration_ms": 977.0,
+      "avg_match_density": 0.015748031496062992
+    }
+  ],
+  "preset_drift": [],
+  "runs": [
+    {
+      "timestamp": "2025-11-15T13:50:46.784818+00:00",
+      "pattern": "GraphExecutor",
+      "preset": "",
+      "files_scanned": 889,
+      "matches": 14,
+      "duration_ms": 977
+    }
+  ],
+  "metadata": {
+    "log_entries": 1,
+    "log_path": "D:\\Files\\Code 3\\ChatAI-DataLab\\logs\\search-history.jsonl",
+    "preset_tags_path": null
+  }
+}

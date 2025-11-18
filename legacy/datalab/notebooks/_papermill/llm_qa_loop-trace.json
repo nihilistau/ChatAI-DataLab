@@ -1,0 +1,49 @@
+[
+  {
+    "id": "node_prompt",
+    "type": "prompt",
+    "inputs": {},
+    "outputs": {
+      "text": "Hello",
+      "variant": "raw"
+    },
+    "props": {
+      "text": "Hello"
+    }
+  },
+  {
+    "id": "node_llm",
+    "type": "llm",
+    "inputs": {
+      "prompt": "Hello"
+    },
+    "outputs": {
+      "response": "[gpt-4o-mini | temp=0.1] Hello",
+      "model": "gpt-4o-mini",
+      "temperature": 0.1
+    },
+    "props": {
+      "model": "gpt-4o-mini",
+      "temperature": 0.1
+    }
+  },
+  {
+    "id": "node_notebook",
+    "type": "notebook",
+    "inputs": {
+      "parameters": "[gpt-4o-mini | temp=0.1] Hello"
+    },
+    "outputs": {
+      "status": "queued",
+      "notebook": "control_center_playground.ipynb",
+      "parameters": {
+        "inputs": {
+          "parameters": "[gpt-4o-mini | temp=0.1] Hello"
+        }
+      }
+    },
+    "props": {
+      "notebook": "control_center_playground.ipynb"
+    }
+  }
+]

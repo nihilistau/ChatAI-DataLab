@@ -8,12 +8,12 @@ $script:LabControlState = @{
 }
 $script:LabControlState["BackupDir"] = Join-Path $script:LabControlState.Root "backups"
 $script:LabControlState["Groups"] = @{
-    backend     = Join-Path $script:LabControlState.Root "chatai\backend"
-    frontend    = Join-Path $script:LabControlState.Root "chatai\frontend"
-    datalab     = Join-Path $script:LabControlState.Root "datalab"
-    scripts     = Join-Path $script:LabControlState.Root "scripts"
-    controlplane= Join-Path $script:LabControlState.Root "controlplane"
-    data        = Join-Path $script:LabControlState.Root "data"
+    backend      = Join-Path $script:LabControlState.Root "chatai\backend"
+    frontend     = Join-Path $script:LabControlState.Root "chatai\frontend"
+    kitchen      = Join-Path $script:LabControlState.Root "kitchen"
+    scripts      = Join-Path $script:LabControlState.Root "scripts"
+    controlplane = Join-Path $script:LabControlState.Root "controlplane"
+    data         = Join-Path $script:LabControlState.Root "data"
 }
 $script:LabControlState["SearchToolkitPath"] = Join-Path $PSScriptRoot "SearchToolkit.psm1"
 
@@ -197,20 +197,20 @@ function Get-LabJobDefinitions {
         Environment      = @{}
         Type             = "node"
     }
-    $defs.datalab = [ordered]@{
-        Name             = "datalab"
-        DisplayName      = "DataLab Jupyter"
-        WorkingDirectory = Join-Path $root "datalab"
+    $defs.kitchen = [ordered]@{
+        Name             = "kitchen"
+        DisplayName      = "Kitchen Jupyter"
+        WorkingDirectory = Join-Path $root "kitchen"
         Command          = "jupyter lab --ip=0.0.0.0 --no-browser"
         Environment      = @{}
         Type             = "python"
-        VirtualEnvPath   = Join-Path (Join-Path $root "datalab") ".venv"
+        VirtualEnvPath   = Join-Path (Join-Path $root "kitchen") ".venv"
     }
     $defs.tail = [ordered]@{
         Name             = "tail"
         DisplayName      = "Tail Log Monitor"
         WorkingDirectory = $root
-        Command          = "Get-Content -Path .\\data\\interactions.db -Wait"
+        Command          = "python scripts\playground_store.py tail-log --follow --limit 40"
         Environment      = @{}
         Type             = "utility"
     }
@@ -444,7 +444,7 @@ function Save-LabWorkspace {
     [CmdletBinding()]
     param(
     [string]$Destination = (Join-Path -Path $script:LabControlState.BackupDir -ChildPath ("workspace-{0}.zip" -f (Get-Date -Format "yyyyMMdd-HHmmss"))),
-        [string[]]$Include = @("chatai", "datalab", "data", "scripts")
+        [string[]]$Include = @("chatai", "kitchen", "data", "scripts")
     )
     $root = Get-LabRoot
     if (-not (Test-Path -Path (Split-Path $Destination -Parent))) {
@@ -482,11 +482,11 @@ function Restore-LabWorkspace {
 function Install-LabDependencies {
     [CmdletBinding()]
     param(
-        [ValidateSet("backend", "frontend", "datalab", "all")]
+        [ValidateSet("backend", "frontend", "kitchen", "all")]
         [string]$Target = "all"
     )
     $root = Get-LabRoot
-    $targets = if ($Target -eq "all") { @("backend", "frontend", "datalab") } else { @($Target) }
+    $targets = if ($Target -eq "all") { @("backend", "frontend", "kitchen") } else { @($Target) }
     $pythonCmd = Get-LabPythonCommand
     foreach ($item in $targets) {
         switch ($item) {
@@ -506,8 +506,8 @@ function Install-LabDependencies {
                     npm run build
                 } finally { Pop-Location }
             }
-            "datalab" {
-                Push-Location (Join-Path $root "datalab")
+            "kitchen" {
+                Push-Location (Join-Path $root "kitchen")
                 try {
                     & $pythonCmd -m venv .venv | Out-Null
                     $pipPath = Get-LabPipPath -ProjectPath (Get-Location).Path
@@ -529,7 +529,7 @@ function New-LabPackage {
     try {
         pytest
     } finally { Pop-Location }
-    Save-LabWorkspace -Destination $Output -Include @("chatai", "datalab", "data") | Out-Null
+    Save-LabWorkspace -Destination $Output -Include @("chatai", "kitchen", "data") | Out-Null
     Write-Host "Release package ready at $Output"
     return $Output
 }
@@ -538,7 +538,7 @@ function Invoke-LabControlCenter {
     [CmdletBinding()]
     param()
     $root = Get-LabRoot
-    Write-Host "ChatAI · DataLab Control Center" -ForegroundColor Cyan
+    Write-Host "ChatAI · Kitchen Control Center" -ForegroundColor Cyan
     Write-Host ("Root: {0}" -f $root)
     Write-Host "--- Jobs ---" -ForegroundColor DarkCyan
     Show-LabJobs
@@ -992,8 +992,8 @@ function Update-LabSearchTelemetry {
     [CmdletBinding()]
     param(
         [string]$LogPath = "logs\search-history.jsonl",
-        [string]$DatabasePath = "data\search_telemetry.db",
-        [string]$ScriptPath = "datalab\scripts\search_telemetry.py"
+        [string]$SummaryPath = "data\search_telemetry.json",
+        [string]$ScriptPath = "scripts\search_telemetry.py"
     )
 
     $root = Get-LabRoot
@@ -1005,25 +1005,29 @@ function Update-LabSearchTelemetry {
     }
 
     $resolvedLog = Join-Path $root $LogPath
-    $resolvedDb = Join-Path $root $DatabasePath
+    $resolvedSummary = Join-Path $root $SummaryPath
     $resolvedLogDir = Split-Path -Parent $resolvedLog
     if (-not (Test-Path $resolvedLogDir)) {
         New-Item -ItemType Directory -Path $resolvedLogDir -Force | Out-Null
     }
+    $resolvedSummaryDir = Split-Path -Parent $resolvedSummary
+    if (-not (Test-Path $resolvedSummaryDir)) {
+        New-Item -ItemType Directory -Path $resolvedSummaryDir -Force | Out-Null
+    }
 
-    $args = @(
+    $commandArgs = @(
         $resolvedScript,
         "ingest",
         "--log-path", $resolvedLog,
-        "--db-path", $resolvedDb
+        "--output", $resolvedSummary
     )
 
-    & $pythonCmd @args
+    & $pythonCmd @commandArgs
     if ($LASTEXITCODE -ne 0) {
         throw "Search telemetry ingestion failed with exit code $LASTEXITCODE"
     }
 
-    Write-Host "Search telemetry ingested into $resolvedDb" -ForegroundColor Green
+    Write-Host "Search telemetry ledger written to $resolvedSummary" -ForegroundColor Green
 }
 
 function Invoke-LabSearchLibrarian {
@@ -1035,8 +1039,8 @@ function Invoke-LabSearchLibrarian {
         [string]$ArchiveDirectory = "data\search-history-archive",
         [switch]$SkipArchive,
         [switch]$RunTelemetryIngestion,
-        [string]$TelemetryDatabasePath = "data\search_telemetry.db",
-        [string]$TelemetryScriptPath = "datalab\scripts\search_telemetry.py"
+        [string]$TelemetrySummaryPath = "data\search_telemetry.json",
+        [string]$TelemetryScriptPath = "scripts\search_telemetry.py"
     )
 
     $root = Get-LabRoot
@@ -1135,7 +1139,7 @@ function Invoke-LabSearchLibrarian {
     }
 
     if ($RunTelemetryIngestion) {
-        Update-LabSearchTelemetry -LogPath $LogPath -DatabasePath $TelemetryDatabasePath -ScriptPath $TelemetryScriptPath | Out-Null
+        Update-LabSearchTelemetry -LogPath $LogPath -SummaryPath $TelemetrySummaryPath -ScriptPath $TelemetryScriptPath | Out-Null
     }
 
     return [pscustomobject]@{
@@ -1340,4 +1344,21 @@ function Publish-LabRelease {
     }
 }
 
-Export-ModuleMember -Function *-Lab*
+$kitchenAliasMap = @{
+    'Kitchen-Job-Start'      = 'Start-LabJob'
+    'Kitchen-Job-Stop'       = 'Stop-LabJob'
+    'Kitchen-Job-Restart'    = 'Restart-LabJob'
+    'Kitchen-Job-StartAll'   = 'Start-AllLabJobs'
+    'Kitchen-Job-StopAll'    = 'Stop-AllLabJobs'
+    'Kitchen-Job-RestartAll' = 'Restart-AllLabJobs'
+    'Kitchen-Job-Show'       = 'Show-LabJobs'
+    'Kitchen-Job-Snapshot'   = 'Get-LabJobSnapshot'
+    'Kitchen-Job-Output'     = 'Receive-LabJobOutput'
+    'Kitchen-Job-Remove'     = 'Remove-LabJob'
+}
+
+foreach ($alias in $kitchenAliasMap.GetEnumerator()) {
+    Set-Alias -Name $alias.Key -Value $alias.Value -Scope Script
+}
+
+Export-ModuleMember -Function *-Lab* -Alias $kitchenAliasMap.Keys

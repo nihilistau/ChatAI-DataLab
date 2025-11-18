@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from datalab.elements.schema import (
+from kitchen.elements.schema import (
 	ELEMENT_ID_PATTERN,
 	ElementDefinition,
 	ElementsCatalog,

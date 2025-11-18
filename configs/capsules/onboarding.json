@@ -1,0 +1,29 @@
+{
+  "capsule_name": "onboarding",
+  "version": "1.0.0",
+  "created": "2025-11-16T00:00:00Z",
+  "environment": {
+    "python_version": "3.10",
+    "dependencies": [
+      "fastapi",
+      "uvicorn",
+      "pytest",
+      "papermill"
+    ],
+    "lab_paths": {
+      "notebooks_dir": "datalab/notebooks",
+      "data_dir": "data",
+      "logs_dir": "data/logs"
+    }
+  },
+  "notebooks": [
+    "search_telemetry-executed.ipynb",
+    "ops_response_playbook.ipynb",
+    "widget_showcase.ipynb"
+  ],
+  "state": {
+    "last_run": null,
+    "snapshot": null,
+    "user": null
+  }
+}

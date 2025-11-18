@@ -14,7 +14,7 @@ Each recipe walks through the end-to-end hypothesis workflow so newcomers can se
 
 ## 2. Hypothesis Workflow Control Lab notebook
 
-1. Launch Jupyter Lab (`cd datalab && . .venv/bin/activate && jupyter lab`).
+1. Launch Jupyter Lab (`cd kitchen && . .venv/bin/activate && jupyter lab`).
 2. Open `notebooks/hypothesis_control.ipynb` and run all cells.
 3. Use the panels:
    - **Meta grid**: refresh stat cards after new tests land in the backend.
@@ -33,14 +33,14 @@ Each recipe walks through the end-to-end hypothesis workflow so newcomers can se
 ## 4. Data replay + repair
 
 1. Run `python scripts/project_integrity.py checkpoint --tag replay --reason "Pre-replay"`.
-2. Modify `chatai/backend/app/models.py` intentionally (add whitespace).
-3. `python scripts/project_integrity.py verify chatai/backend/app/models.py` shows the hash mismatch.
-4. `python scripts/project_integrity.py repair chatai/backend/app/models.py --checkpoint latest` restores the pristine copy.
+2. Modify `playground/backend/app/models.py` intentionally (add whitespace).
+3. `python scripts/project_integrity.py verify playground/backend/app/models.py` shows the hash mismatch.
+4. `python scripts/project_integrity.py repair playground/backend/app/models.py --checkpoint latest` restores the pristine copy.
 
 ## 5. Extending the stack
 
-- **Frontend themes**: add a new entry to `THEME_VARIANTS` in `App.tsx` and tag it with `@tag:ui,theme`.
-- **LLM providers**: implement a new client in `app/services/llm_client.py`, annotate the class with `# @tag:backend,llm`.
-- **DataLab assets**: drop additional notebooks into `datalab/notebooks/` and document them inside `docs/TUTORIALS.md` so future contributors know how to reproduce your analysis.
+- **Frontend themes**: add a new entry to `THEME_VARIANTS` in `App.tsx` and tag it with `@tag:ui,theme` (theme system is implemented; future variants can be added as needed).
+- **LLM providers**: implement a new client in `app/services/llm_client.py`, annotate the class with `# @tag:backend,llm` (LLM client system is implemented; new providers can be added as needed).
+- **Kitchen assets**: drop additional recipes (notebooks) into `kitchen/notebooks/` and document them inside `docs/TUTORIALS.md` so future contributors know how to reproduce your analysis (recipe and asset system is implemented; future tutorials will cover new additions).
 
-> Every tutorial step now maps to the integrity manifest + tagging system, making it easy to answer “what changed, why, and when?”
+> Every tutorial step now maps to the integrity manifest + tagging system, making it easy to answer “what changed, why, and when?” All core systems are implemented; future tutorials will document new features as they ship.

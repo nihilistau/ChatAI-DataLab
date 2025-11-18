@@ -17,14 +17,14 @@ pretty "Verifying integrity manifest"
 python scripts/project_integrity.py status
 
 pretty "Running backend + notebook tests"
-python -m pytest chatai/backend/tests -q
+python -m pytest playground/backend/tests -q
 python -m pytest tests/test_notebooks.py -q
 
-if [[ -d "chatai/frontend/node_modules" ]]; then
+if [[ -d "playground/frontend/node_modules" ]]; then
   pretty "Running frontend checks"
-  (cd chatai/frontend && npm run lint -- --max-warnings=0)
-  (cd chatai/frontend && npm run test -- --runInBand)
-  (cd chatai/frontend && npm run test:playground -- --runInBand)
+  (cd playground/frontend && npm run lint -- --max-warnings=0)
+  (cd playground/frontend && npm run test -- --runInBand)
+  (cd playground/frontend && npm run test:playground -- --runInBand)
 else
   pretty "Skipping frontend checks (install dependencies first)"
 fi

@@ -18,11 +18,11 @@
    - Scans repo, respects exclusions, creates `index.json`, and records checkpoint `0001`.
 2. **Status**: `python scripts/project_integrity.py status`
    - Compares working tree to the manifest; outputs `added/modified/deleted` counts.
-3. **Verify file(s)**: `python scripts/project_integrity.py verify chatai/backend/app/models.py`
+3. **Verify file(s)**: `python scripts/project_integrity.py verify playground/backend/app/models.py`
    - Hashes a single file (or glob) and prints pass/fail details.
 4. **Checkpoint**: `python scripts/project_integrity.py checkpoint --tag release --reason "0.4.0"`
    - Captures new snapshot, increments counter, copies files into `.project_integrity/backups/<stamp>`.
-5. **Repair**: `python scripts/project_integrity.py repair chatai/backend/app/models.py --checkpoint latest`
+5. **Repair**: `python scripts/project_integrity.py repair playground/backend/app/models.py --checkpoint latest`
    - Restores a file from the last (or specified) checkpoint backup.
 6. **Export**: `python scripts/project_integrity.py export backups/release-0.4.0.zip --checkpoint 0007`
    - Bundles the checkpoint backup into a zip for sharing.
@@ -31,7 +31,7 @@
 
 ```jsonc
 {
-  "path": "chatai/backend/app/models.py",
+   "path": "playground/backend/app/models.py",
   "hash": "sha256:...",
   "size": 5123,
   "last_modified": "2025-11-15T00:21:05Z",
@@ -56,7 +56,7 @@
 | Scenario | Command |
 | --- | --- |
 | Single file drift | `python scripts/project_integrity.py repair path/to/file` |
-| Directory drift | `python scripts/project_integrity.py repair chatai/backend --checkpoint 0005` |
+| Directory drift | `python scripts/project_integrity.py repair playground/backend --checkpoint 0005` |
 | Full reset | `python scripts/project_integrity.py repair --all --checkpoint latest` |
 
 If a file no longer exists in the checkpoint, the tool aborts with instructions to restore manually.

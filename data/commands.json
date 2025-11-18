@@ -1,1 +1,87 @@
-[]
+[
+  {
+    "id": "5424c65e-c9da-47b4-902a-b5af80d0adaf",
+    "label": "Manifest validator (onboarding)",
+    "command": "python scripts/manifest_validator.py configs/capsules/onboarding.json --json --expect-tenant demo-tenant --expect-playground welcome-control",
+    "created_at": "2025-11-17T02:27:20.783632+00:00",
+    "added_by": null,
+    "tags": [
+      "manifest",
+      "mcp",
+      "validator"
+    ],
+    "description": "Validate the onboarding control-center manifest and emit MCP-friendly JSON",
+    "working_dir": null,
+    "last_status": "never-run",
+    "last_run_at": null,
+    "history": []
+  },
+  {
+    "id": "1d5a8d6c-9c53-4c5f-9ef0-5733b1c4fd73",
+    "label": "Kitchen · start all jobs",
+    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Kitchen-Job-StartAll\"",
+    "created_at": "2025-01-14T04:00:00.000000+00:00",
+    "added_by": null,
+    "tags": [
+      "kitchen",
+      "jobs",
+      "start"
+    ],
+    "description": "Use the noun-first Kitchen command surface to trigger every queued job (wraps Start-AllLabJobs).",
+    "working_dir": null,
+    "last_status": "never-run",
+    "last_run_at": null,
+    "history": []
+  },
+  {
+    "id": "a3df72da-8947-4bcb-807d-5c6a730521ee",
+    "label": "Kitchen · stop all jobs",
+    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Kitchen-Job-StopAll\"",
+    "created_at": "2025-01-14T04:00:01.000000+00:00",
+    "added_by": null,
+    "tags": [
+      "kitchen",
+      "jobs",
+      "stop"
+    ],
+    "description": "Gracefully stop every running Kitchen job via the new Kitchen-Job-StopAll alias (force flag removed for catalog safety).",
+    "working_dir": null,
+    "last_status": "never-run",
+    "last_run_at": null,
+    "history": []
+  },
+  {
+    "id": "64a3d67b-5a3f-4bd9-9c25-03a86cf69fb9",
+    "label": "Kitchen · job dashboard",
+    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Kitchen-Job-Show\"",
+    "created_at": "2025-01-14T04:00:02.000000+00:00",
+    "added_by": null,
+    "tags": [
+      "kitchen",
+      "jobs",
+      "status"
+    ],
+    "description": "List all Kitchen jobs with their state and timestamps (alias for Show-LabJobs).",
+    "working_dir": null,
+    "last_status": "never-run",
+    "last_run_at": null,
+    "history": []
+  },
+  {
+    "id": "0c5f9ee3-efdc-4590-ae1e-d077f3defe48",
+    "label": "Kitchen · job snapshot",
+    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Kitchen-Job-Snapshot\"",
+    "created_at": "2025-01-14T04:00:03.000000+00:00",
+    "added_by": null,
+    "tags": [
+      "kitchen",
+      "jobs",
+      "snapshot"
+    ],
+    "description": "Capture the Kitchen job manifest snapshot for tail-log troubleshooting (wraps Get-LabJobSnapshot).",
+    "working_dir": null,
+    "last_status": "never-run",
+    "last_run_at": null,
+    "history": []
+  }
+]

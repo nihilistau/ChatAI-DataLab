@@ -47,7 +47,7 @@ param(
 )
 
 $modulePath = Join-Path $PSScriptRoot "powershell\LabControl.psm1"
-Import-Module $modulePath -Force
+Import-Module $modulePath -Force -DisableNameChecking
 
 $searchRequested = $PSBoundParameters.ContainsKey('SearchPreset') -or $PSBoundParameters.ContainsKey('SearchPattern')
 $telemetryRequested = $RunSearchTelemetryIngestion

@@ -1,0 +1,53 @@
+[
+  {
+    "id": "node_report_prompt",
+    "type": "prompt",
+    "inputs": {},
+    "outputs": {
+      "text": "Summarize the latest lab findings",
+      "variant": "raw"
+    },
+    "props": {
+      "text": "Summarize the latest lab findings"
+    }
+  },
+  {
+    "id": "node_report_llm",
+    "type": "llm",
+    "inputs": {
+      "prompt": "Summarize the latest lab findings"
+    },
+    "outputs": {
+      "response": "[gpt-4o-mini | temp=0.2] Summarize the latest lab findings",
+      "model": "gpt-4o-mini",
+      "temperature": 0.2
+    },
+    "props": {
+      "model": "gpt-4o-mini",
+      "temperature": 0.2
+    }
+  },
+  {
+    "id": "node_report_notebook",
+    "type": "notebook",
+    "inputs": {
+      "parameters": "[gpt-4o-mini | temp=0.2] Summarize the latest lab findings"
+    },
+    "outputs": {
+      "status": "queued",
+      "notebook": "elements_reporting.ipynb",
+      "parameters": {
+        "format": "markdown",
+        "inputs": {
+          "parameters": "[gpt-4o-mini | temp=0.2] Summarize the latest lab findings"
+        }
+      }
+    },
+    "props": {
+      "notebook": "elements_reporting.ipynb",
+      "parameters": {
+        "format": "markdown"
+      }
+    }
+  }
+]

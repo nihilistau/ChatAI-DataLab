@@ -20,11 +20,11 @@ venv/
 
 # Integrity + diagnostics artifacts
 .project_integrity/
-datalab/_papermill/
-datalab/notebooks/_papermill/
+kitchen/_papermill/
+kitchen/notebooks/_papermill/
 **/.ipynb_checkpoints/
 **/*.out.ipynb
-datalab/notebooks/DB_PATH
+kitchen/notebooks/DB_PATH
 
 # Local data caches
 data/*.db
@@ -32,7 +32,7 @@ data/*.db
 # Misc Python env leftovers
 **/.venv*/
 
-# DataLab runtime state
+# Lab runtime state
 .labctl/
 backups/
 data/logs/

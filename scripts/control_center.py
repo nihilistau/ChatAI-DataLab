@@ -11,11 +11,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
-from controlplane import get_default_orchestrator
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from controlplane import get_default_orchestrator
 FRONTEND_DIR = REPO_ROOT / "chatai" / "frontend"
-NOTEBOOK_PATH = REPO_ROOT / "datalab" / "notebooks" / "control_center_playground.ipynb"
+NOTEBOOK_PATH = REPO_ROOT / "kitchen" / "notebooks" / "control_center_playground.ipynb"
 OUTPUT_DIR = NOTEBOOK_PATH.parent / "_papermill"
 
 
@@ -66,8 +68,15 @@ def cmd_notebook(args: argparse.Namespace) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     output_path = OUTPUT_DIR / f"control_center_playground-cli-{timestamp}.ipynb"
+    db_override: str | None = None
+    if args.db_path:
+        if args.db_path.lower() != "auto":
+            db_path = Path(args.db_path)
+            if not db_path.is_absolute():
+                db_path = (REPO_ROOT / db_path).resolve()
+            db_override = str(db_path)
     parameters = {
-        "DB_PATH": args.db_path,
+        "DB_PATH": db_override,
         "CONTROL_STATUS_URL": args.status_url,
         "OUTPUT_DIR": str(OUTPUT_DIR),
     }
@@ -101,7 +110,11 @@ def build_parser() -> argparse.ArgumentParser:
     storybook_cmd.set_defaults(func=cmd_storybook)
 
     notebook_cmd = subparsers.add_parser("notebook", help="Execute control_center_playground.ipynb via Papermill")
-    notebook_cmd.add_argument("--db-path", default="./data/interactions.db", help="SQLite database path")
+    notebook_cmd.add_argument(
+        "--db-path",
+        default=None,
+        help="Optional SQLite path override. Omit or pass 'auto' to use the configured data store",
+    )
     notebook_cmd.add_argument(
         "--status-url",
         default="http://localhost:8000/api/control/status",
@@ -123,16 +136,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-
-Set-Location -Path "d:\Files\Code 3\ChatAI-DataLab\chatai\backend"; & .\.venv\Scripts\python.exe -m pytest tests/test_commands_api.py
-
-
-
-D:\Files\Code 3\ChatAI-DataLab\chatai\backend\venv\Scripts
-D:\Files\Code 3\ChatAI-DataLab\chatai\backend
-D:\Files\Code 3\ChatAI-DataLab
-
-D:\Files\Code 3\ChatAI-DataLab\chatai\frontend
-D:\Files\Code 3\ChatAI-DataLab\chatai\

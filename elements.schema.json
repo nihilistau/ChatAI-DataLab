@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://chatai-datalab/elements.schema.json",
+  "$id": "https://chatai-kitchen/elements.schema.json",
   "title": "ChatAI Elements Catalog",
   "type": "object",
   "additionalProperties": false,

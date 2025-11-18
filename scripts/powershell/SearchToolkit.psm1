@@ -144,7 +144,7 @@ function Invoke-RepoSearch {
     }
 
     $autoExclude = @()
-    if (-not $IncludeVenv) { $autoExclude += @("\\.venv", "datalab\\venv") }
+    if (-not $IncludeVenv) { $autoExclude += @("\\.venv", "kitchen\\venv") }
     if (-not $IncludeNodeModules) { $autoExclude += "node_modules" }
     if (-not $IncludeStorybook) { $autoExclude += "storybook" }
     if (-not $IncludeGit) { $autoExclude += "\\.git" }

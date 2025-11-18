@@ -1,0 +1,62 @@
+{
+  "name": "LLM QA Loop",
+  "tenantId": "lab",
+  "workspaceId": "default",
+  "nodes": [
+    {
+      "id": "node_prompt",
+      "type": "prompt",
+      "label": "Prompt",
+      "props": {
+        "text": "Hello"
+      }
+    },
+    {
+      "id": "node_llm",
+      "type": "llm",
+      "label": "LLM",
+      "props": {
+        "model": "gpt-4o-mini",
+        "temperature": 0.1
+      }
+    },
+    {
+      "id": "node_notebook",
+      "type": "notebook",
+      "label": "Notebook",
+      "props": {
+        "notebook": "control_center_playground.ipynb"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_prompt_llm",
+      "from": {
+        "node": "node_prompt",
+        "port": "text"
+      },
+      "to": {
+        "node": "node_llm",
+        "port": "prompt"
+      }
+    },
+    {
+      "id": "edge_llm_notebook",
+      "from": {
+        "node": "node_llm",
+        "port": "response"
+      },
+      "to": {
+        "node": "node_notebook",
+        "port": "parameters"
+      }
+    }
+  ],
+  "metadata": {
+    "tags": [
+      "qa"
+    ],
+    "createdBy": "notebook"
+  }
+}

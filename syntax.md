@@ -12,7 +12,7 @@ Footer: Issues and checkpoints.
 ```
 
 - **Allowed `type` values** during freeze: `fix`, `hardening`, `docs`, `ops`, `test`, `infra`.
-- **Scopes** reference top-level areas (`backend`, `frontend`, `datalab`, `scripts`, `docs`, `labctl`).
+- **Scopes** reference top-level areas (`backend`, `frontend`, `kitchen`, `scripts`, `docs`, `labctl`).
 - **Summary** limited to 72 chars, must describe the bug or tightening action.
 - **Footers**:
   - `Fixes #123`
@@ -93,8 +93,8 @@ Mandatory GitHub labels per PR / issue:
 
 ## 8. Job naming
 
-Reference CI jobs exactly as defined under `.github/workflows/datalab-notebooks.yml` when discussing failures:
-`backend-tests`, `datalab-tests`, `frontend-qa`, `storybook-builds`, `integrity-scan`.
+Reference CI jobs exactly as defined under `.github/workflows/kitchen-notebooks.yml` when discussing failures:
+`backend-tests`, `kitchen-tests`, `frontend-qa`, `storybook-builds`, `integrity-scan`.
 
 ## 9. Search Toolkit presets
 

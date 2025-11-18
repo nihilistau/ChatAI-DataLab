@@ -10,20 +10,20 @@ All notable changes to this repository will be documented in this file. The form
 - Ops design system showcase content and notebook safety net enhancements captured inside `tests/test_notebooks.py` and Papermill outputs.
 
 ### Changed
-- Elements API guardrail endpoint now accepts optional payloads so max-run enforcement returns `429` instead of validation errors (`chatai/backend/app/api/elements.py`).
-- Notebook regressions run with the full DataLab requirements set (Plotly, ipywidgets, visualization deps) to prevent env drift.
+- Elements API guardrail endpoint now accepts optional payloads so max-run enforcement returns `429` instead of validation errors (`playground/backend/app/api/elements.py`).
+- Notebook regressions now install the Kitchen requirements set (Plotly, ipywidgets, visualization deps) to prevent env drift.
 - Frontend vitest suites lint cleanly thanks to explicit Vitest globals and TS-safe blueprint definitions.
 
 ## [1.1.0] - 2025-11-15
 
 ### Added
-- Search telemetry ingestion CLI (`datalab/scripts/search_telemetry.py`) plus Papermill-tested notebook `datalab/notebooks/search_telemetry.ipynb` for Ops Deck hygiene trends.
+- Search telemetry ingestion CLI (`kitchen/scripts/search_telemetry.py`, with the archived `legacy/datalab/scripts/search_telemetry.py` kept for historical reference) plus the Papermill-tested notebook `kitchen/notebooks/search_telemetry.ipynb` for Ops Deck hygiene trends.
 - LabControl automation for telemetry refreshes (`-RunSearchTelemetryIngestion`) and full release pipelines (version bumps, changelog templating, tests, integrity, pushes).
 - Changelog templating scaffold (`docs/CHANGELOG_TEMPLATE.md`) and new `ReleaseChangelogSection` flag for structured notes.
 
 ### Changed
 - `Publish-LabRelease` now supports `-Bump` presets, changelog templates/sections, `Invoke-LabReleasePipeline`, and `Resolve-LabReleaseVersion` helper.
-- `tests/test_notebooks.py` exercises the new telemetry notebook and parameterizes `SEARCH_DB_PATH` for deterministic renders.
+- `tests/test_notebooks.py` exercises the new telemetry notebook and parameterizes `SEARCH_LEDGER_PATH` for deterministic renders.
 
 ## [0.2.0] - 2025-11-15
 

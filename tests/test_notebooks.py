@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-"""Papermill smoke tests for DataLab notebooks."""
+"""Papermill smoke tests for Kitchen notebooks."""
 
-# @tag: datalab,tests,notebooks
+# @tag: kitchen,tests,notebooks
 
 import json
 from pathlib import Path
@@ -12,14 +12,14 @@ import papermill as pm
 import pytest
 
 from tests.utils.notebooks import normalize_notebook
-from datalab.scripts import search_telemetry
+from kitchen.scripts import search_telemetry
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:datetime\\.datetime\\.utcnow\\(\\) is deprecated.*:DeprecationWarning:papermill.*",
     "ignore:Cell is missing an id field.*:nbformat.validator.MissingIDFieldWarning",
 )
 
-NOTEBOOK_DIR = Path(__file__).resolve().parents[1] / "datalab" / "notebooks"
+NOTEBOOK_DIR = Path(__file__).resolve().parents[1] / "kitchen" / "notebooks"
 OUTPUT_DIR = NOTEBOOK_DIR / "_papermill"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -121,7 +121,7 @@ def test_notebooks_execute(notebook_name: str, tmp_path: Path) -> None:
 
     sample_db = tmp_path / "interactions.db"
     _create_sample_db(sample_db)
-    sample_search_db = tmp_path / "search_telemetry.db"
+    sample_search_db = tmp_path / "search_telemetry.json"
     _create_sample_search_db(sample_search_db)
 
     pm.execute_notebook(
@@ -129,7 +129,7 @@ def test_notebooks_execute(notebook_name: str, tmp_path: Path) -> None:
         str(output_path),
         parameters={
             "DB_PATH": str(sample_db),
-            "SEARCH_DB_PATH": str(sample_search_db),
+            "SEARCH_LEDGER_PATH": str(sample_search_db),
         },
         kernel_name="python3",
         cwd=NOTEBOOK_DIR,

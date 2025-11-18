@@ -1,0 +1,76 @@
+{
+  "prompt_count": 2,
+  "service_states": [
+    "backend (windows): unknown",
+    "frontend (windows): unknown",
+    "datalab (linux): unknown"
+  ],
+  "sample_latency_ms": 29,
+  "lab_root": "D:\\Files\\Code 3\\ChatAI-DataLab",
+  "fallback_reason": "Control Center API unavailable (<urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>)",
+  "recent_diagnostics": [
+    {
+      "timestamp": "2025-11-17T15:30:33.390751+00:00",
+      "category": "healthcheck",
+      "message": "Control health probe",
+      "data": {
+        "overall": "fail",
+        "data_store": {
+          "provider": "sqlite",
+          "path": "D:\\Files\\Code 3\\ChatAI-DataLab\\data\\interactions.db",
+          "size_bytes": 110592,
+          "interaction_count": 25,
+          "latest_interactions": [
+            {
+              "id": "055713c9-8019-48e8-967a-5476d7268bfd",
+              "model": "echo",
+              "prompt_preview": "Live workspace capturing cadence metrics and guardrails.",
+              "created_at": "2025-11-15T13:16:11.527575"
+            },
+            {
+              "id": "3811610c-a765-4547-abcc-9422ab034a09",
+              "model": "echo",
+              "prompt_preview": "i want you",
+              "created_at": "2025-11-15T13:07:40.656531"
+            },
+            {
+              "id": "d86a4287-a355-4dce-ba65-a119deb028ed",
+              "model": "echo",
+              "prompt_preview": "hffgfhgfghfvvvhkgghgfftff",
+              "created_at": "2025-11-15T13:04:03.816895"
+            }
+          ],
+          "status": "ok"
+        },
+        "control_status": {
+          "url": "http://localhost:8000/api/control/status",
+          "status": "error",
+          "error": "[WinError 10061] No connection could be made because the target machine actively refused it",
+          "latency_ms": 4449.76
+        },
+        "environment": {
+          "status": "ok",
+          "lab_root": "D:\\Files\\Code 3\\ChatAI-DataLab",
+          "lab_root_env": "D:\\Files\\Code 3\\ChatAI-DataLab"
+        }
+      }
+    },
+    {
+      "timestamp": "2025-11-17T16:39:17.871842+00:00",
+      "category": "control-center",
+      "message": "Control status fallback",
+      "data": {
+        "url": "http://localhost:8000/api/control/status",
+        "error": "<urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>"
+      }
+    },
+    {
+      "timestamp": "2025-11-17T16:39:17.897406+00:00",
+      "category": "control-center",
+      "message": "Snapshot written",
+      "data": {
+        "path": "D:\\Files\\Code 3\\ChatAI-DataLab\\datalab\\notebooks\\_papermill\\control_center_snapshot.json"
+      }
+    }
+  ]
+}

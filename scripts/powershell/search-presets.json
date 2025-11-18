@@ -3,12 +3,12 @@
     "root": "..\\..",
     "includeFiles": ["*.py", "*.ts", "*.tsx", "*.md", "*.js"],
     "excludePatterns": [
-      "\\\\.venv",
-      "datalab\\\\venv",
+      "\\.venv",
+      "kitchen\\\\venv",
       "node_modules",
       "storybook",
       "__pycache__",
-      "\\\\.git"
+      "\\.git"
     ],
     "recursive": true
   },
@@ -26,12 +26,12 @@
       "pattern": "TODO",
       "matchMode": "simple",
       "includeFiles": ["*.py", "*.ts", "*.tsx", "*.md", "*.js"],
-      "excludePatterns": ["\\\\.venv", "datalab\\\\venv", "node_modules", "storybook", "__pycache__", "\\\\.git"],
+      "excludePatterns": ["\\\\.venv", "kitchen\\\\venv", "node_modules", "storybook", "__pycache__", "\\\\.git"],
       "root": "..\\..",
       "recursive": true,
       "tags": ["todo", "code-health"],
       "history": [
-        "Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch \"datalab\\\\venv\" -and $_.FullName -notmatch \"\\\\.git\" } | Select-String -Pattern \"TODO\""
+        "Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch \"kitchen\\\\venv\" -and $_.FullName -notmatch \"\\\\.git\" } | Select-String -Pattern \"TODO\""
       ]
     },
     {
@@ -57,7 +57,7 @@
       "recursive": true,
       "tags": ["backend", "unimplemented"],
       "history": [
-        "cd \"d:/Files/Code 3/ChatAI-DataLab\"; Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch \"datalab\\\\venv\" -and $_.FullName -notmatch \"\\\\.git\" } | Select-String -Pattern \"unimplemented\""
+        "cd \"d:/Files/Code 3/ChatAI-DataLab\"; Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch \"kitchen\\\\venv\" -and $_.FullName -notmatch \"\\\\.git\" } | Select-String -Pattern \"unimplemented\""
       ]
     },
     {
@@ -66,11 +66,11 @@
       "pattern": "console\\.log|debugger",
       "matchMode": "regex",
       "includeFiles": ["*.ts", "*.tsx", "*.js", "*.jsx"],
-      "root": "..\\..\\chatai\\frontend\\src",
+      "root": "..\\..\\playground\\frontend\\src",
       "recursive": true,
       "tags": ["frontend", "debug", "cleanup"],
       "history": [
-        "cd \"d:/Files/Code 3/ChatAI-DataLab/chatai/frontend\"; Get-ChildItem -Path src -Recurse -Include *.ts,*.tsx,*.js,*.jsx | Select-String -Pattern \"console\\\\.log|debugger\""
+        "cd \"d:/Files/Code 3/ChatAI-DataLab/playground/frontend\"; Get-ChildItem -Path src -Recurse -Include *.ts,*.tsx,*.js,*.jsx | Select-String -Pattern \"console\\\\.log|debugger\""
       ]
     },
     {
@@ -79,11 +79,11 @@
       "pattern": "print\\(",
       "matchMode": "regex",
       "includeFiles": ["*.py"],
-      "root": "..\\..\\chatai\\backend",
+      "root": "..\\..\\playground\\backend",
       "recursive": true,
       "tags": ["backend", "debug", "cleanup"],
       "history": [
-        "cd \"d:/Files/Code 3/ChatAI-DataLab/chatai/backend\"; Get-ChildItem -Recurse -Include *.py | Select-String -Pattern \"print\\\\(\""
+        "cd \"d:/Files/Code 3/ChatAI-DataLab/playground/backend\"; Get-ChildItem -Recurse -Include *.py | Select-String -Pattern \"print\\\\(\""
       ]
     },
     {

@@ -1,4 +1,4 @@
-# ChatAI + DataLab — Project Overview
+# ChatAI + Playground — Project Overview
 
 > **Milestone:** Framework v1.0.0 (Complete)  
 > **Snapshot:** 2025-11-15 14:00 UTC  
@@ -6,7 +6,7 @@
 
 <!-- Snapshot recorded: 2025-11-15T14:00:00Z -->
 
-This document captures the completed ChatAI capture pipeline and DataLab insight environment. Treat it as the authoritative description of what exists today—structure, commands, and feature set. Future enhancements must be documented as dated entries before they graduate into this file.
+This document captures the completed ChatAI capture pipeline and Kitchen-powered Playground environment. Treat it as the authoritative description of what exists today—structure, commands, and feature set. Future enhancements must be documented as dated entries before they graduate into this file.
 
 ## Expanded Functionality
 
@@ -16,11 +16,11 @@ This document captures the completed ChatAI capture pipeline and DataLab insight
 | 2025-11-15 | LabControl Search Proxy | `scripts/powershell/LabControl.psm1`, `scripts/lab-control.ps1` | LabControl can now run any preset via `-SearchPreset` / `-SearchPattern`, keeping Windows + Linux ops flows aligned. |
 | 2025-11-15 | Release Automation Helper | `scripts/powershell/LabControl.psm1`, `scripts/lab-control.ps1`, `docs/RELEASE_CHECKLIST.md` | `Publish-LabRelease` runs integrity, tagging, and optional pushes (with `-DryRun` support) so Framework releases stay reproducible. |
 | 2025-11-15 | Release Checklist Runner | `scripts/release_checklist.ps1`, `scripts/powershell/LabControl.psm1` | `-RunTests` flag executes backend/notebook/frontend checks before tagging; `-FinalizeChangelog` and `-UpdateIntegrity` keep metadata fresh. |
-| 2025-11-15 | Search telemetry ingestion | `datalab/scripts/search_telemetry.py`, `datalab/notebooks/search_telemetry.ipynb`, `tests/test_notebooks.py`, `scripts/lab-control.ps1` | Search Toolkit logs hydrate into `data/search_telemetry.db`, powering notebooks + Ops Deck charts (ingest via LabControl or direct CLI). |
+| 2025-11-15 | Search telemetry ingestion | `scripts/search_telemetry.py`, `kitchen/telemetry/search_ledger.py`, `kitchen/notebooks/search_telemetry.ipynb`, `tests/test_notebooks.py`, `scripts/lab-control.ps1` | Search Toolkit logs hydrate into `data/search_telemetry.json`, powering notebooks + Ops Deck charts (ingest via LabControl or direct CLI). |
 | 2025-11-15 | Release pipeline presets | `scripts/powershell/LabControl.psm1`, `scripts/lab-control.ps1`, `docs/CHANGELOG_TEMPLATE.md` | `Publish-LabRelease` now supports `-Bump` version presets, changelog templating, and the `-ReleasePipeline` job to run tests, integrity, and pushes end-to-end. |
-| 2025-11-15 | Command history filters | `chatai/backend/app/api/commands.py`, `tests/test_commands_api.py` | `/api/commands` now supports `status`, `tag`, and `limit` filters plus a dedicated `/api/commands/{id}/history` endpoint for paginated history access. |
+| 2025-11-15 | Command history filters | `playground/backend/app/api/commands.py`, `tests/test_commands_api.py` | `/api/commands` now supports `status`, `tag`, and `limit` filters plus a dedicated `/api/commands/{id}/history` endpoint for paginated history access. |
 | 2025-11-15 | Lab bootstrap + command listing | `scripts/lab-bootstrap.ps1`, `scripts/powershell/LabControl.psm1`, `configs/lab_environment_config.md` | Bootstraps env vars, deep scans notebooks/backend/frontend, exposes `List-Commands` inside LabControl, and documents canonical syntax/paths. |
-| 2025-11-15 | Diagnostics + healthcheck wiring | `datalab/lab_paths.py`, `datalab/diagnostics.py`, `scripts/control_health.py`, `chatai/frontend/src/lib/api.ts`, `scripts/powershell/LabControl.psm1` | Unified `LAB_ROOT` helpers, structured diagnostics log, Papermill metadata, Control Center fixture toggles, and the `Test-LabHealth` command. |
+| 2025-11-15 | Diagnostics + healthcheck wiring | `kitchen/lab_paths.py`, `kitchen/diagnostics.py`, `scripts/control_health.py`, `playground/frontend/src/lib/api.ts`, `scripts/powershell/LabControl.psm1` | Unified `LAB_ROOT` helpers, structured diagnostics log, Papermill metadata, Control Center fixture toggles, and the `Test-LabHealth` command. |
 
 ---
 ## Overview ##
@@ -28,51 +28,61 @@ This document captures the completed ChatAI capture pipeline and DataLab insight
 
 ## 1. Libraries Purpose
 
-- **Reliable data capture**: Instrument every user prompt to record raw text, cadence, pauses, and edit history without slowing the UI.
-- **Unified storage**: Persist structured conversations plus metadata in a portable SQLite database that can later be upgraded to Postgres or Cosmos DB.
-- **Fast analysis loops**: Provide Jupyter-ready tooling so insights, visualizations, and experiments stay close to the source data.
-- **Portable ops story**: Everything must run from a monorepo with predictable setup instructions (scripted and containerized) that work on cloud VMs, local laptops, and Codespaces.
+**Reliable data capture**: Instrument every user prompt to record raw text, cadence, pauses, and edit history without slowing the UI.
+**Unified storage**: Persist structured conversations plus metadata in SQLite or Cosmos DB (runtime selectable). Migration and schema upgrades are supported as future enhancements.
+**Kitchen-first experimentation**: Provide notebook tooling (Recipes + Cookbooks) so Playground layouts, workflows, and analyses stay close to the source data.
+**Portable ops story**: Everything must run from a monorepo with predictable setup instructions (scripted and containerized) that work on cloud VMs, local laptops, and Codespaces.
 
 ## 2. High-Level Architecture
 
 ```
-┌────────────┐    HTTPS    ┌───────────────┐        ┌────────────────┐
-│  ChatAI UI │ ─────────▶ │ FastAPI Relay │ ─────▶ │ interactions.db │
-└────────────┘            └───────────────┘        └────────────────┘
-		  ▲                         │                         │
-		  │      LLM APIs / Ollama  ▼                         │
-		  │──────────────────────▶ External Model             │
-		  │                                                  ▼
-		  │                                           ┌────────────┐
-		  └────────────────────────────────────────── │  DataLab   │
-																	 └────────────┘
+┌────────────┐    HTTPS    ┌───────────────┐        ┌────────────────────────────────┐
+│ Frontend   │ ─────────▶ │ FastAPI Relay │ ─────▶ │ Playground Data Store (pluggable) │
+└────────────┘            └───────────────┘        └────────────────────────────────┘
+	  ▲                         │                         │
+	  │      LLM APIs / Ollama  ▼                         │
+	  │──────────────────────▶ External Model             │
+	  │                                                  ▼
+	  │                                           ┌────────────┐
+	  └───────────────────── Kitchen Recipes ───▶ │  Kitchen   │
+				 └────────────┘
 ```
 
 | Layer      | Responsibilities | Key Tech |
 |------------|------------------|----------|
-| ChatAI UI  | Capture prompt text + metadata, display AI responses | SvelteKit or React (Vite) |
-| FastAPI    | Validate payloads, call LLM, persist data, expose REST APIs | FastAPI, Pydantic, SQLAlchemy |
-| Storage    | Durable interaction history, structured metadata, reproducible file-based DB | SQLite (later Postgres/Cosmos DB) |
-| DataLab    | Notebook-driven exploration, scripts, dashboards | JupyterLab, pandas, Plotly |
+| Frontend (Control Surface) | Capture prompt text + metadata, display AI responses, render layouts authored by the Kitchen | SvelteKit or React (Vite) |
+| FastAPI (Orchestrator)   | Validate payloads, call LLM, persist data, expose REST APIs, stream manifest updates | FastAPI, Pydantic, SQLAlchemy |
+| Storage    | Durable interaction history, structured metadata, reproducible provider-agnostic store | SQLite (default), JSON snapshot, Cosmos DB |
+| Kitchen    | Notebook-driven system design (Recipes), scripts, dashboards, workflow automation | JupyterLab, pandas, Plotly |
+
+### 2.1 Playgrounds & Tenancy
+
+- A **Playground** is a deployable combination of the three layers above plus configuration that scopes them to a purpose or tenant.
+- Playgrounds are versioned via Cookbooks authored in the Kitchen; the backend promotes those manifests and the frontend reflects them live.
+- Tenants own one or more Playgrounds. Namespaces follow `<tenant>/<playground>/<revision>` and map to storage rows plus manifest history.
+- Refer to `docs/PLAYGROUND_GUIDE.md` for deeper definitions, vocabulary, and the Welcome Cookbook plan.
 
 ## 3. Repository Layout
 
 ```
 ChatAI-DataLab/
-├── chatai/
+├── playground/
 │   ├── frontend/        # SvelteKit/React instrumentation client
 │   ├── backend/         # FastAPI service, SQLAlchemy models
 │   └── Dockerfile       # Builds combined API image (serves static assets via ASGI)
-├── datalab/
-│   ├── notebooks/       # Exploratory and production notebooks
-│   ├── scripts/         # Reusable analysis helpers & CLI utilities
-│   └── requirements.txt # Data science dependencies
+├── kitchen/
+│   ├── notebooks/       # Recipes + Cookbooks that define Playgrounds
+│   ├── scripts/         # Layout/manifest helpers & CLI utilities
+│   └── requirements.txt # Notebook + widget dependencies
+├── legacy/
+│   └── datalab/         # Archived notebooks/scripts kept for historical reference
 ├── data/
-│   └── interactions.db  # SQLite database (mounted volume in Docker)
+│   ├── interactions.db        # Auto-generated when DATABASE_PROVIDER=sqlite (managed via scripts/playground_store.py)
+│   └── playground_store.json  # Auto-generated when DATABASE_PROVIDER=json (same CLI emits/reads this snapshot)
 ├── scripts/
 │   ├── setup.sh         # Idempotent environment bootstrap
 │   └── fetch_assets.sh  # Optional large-model / dataset download hooks
-├── docker-compose.yml   # Local Orchestration: API + frontend + DataLab
+├── docker-compose.yml   # Local Orchestration: API + frontend + Kitchen
 └── PROJECT_OVERVIEW.md  # You are here
 ```
 
@@ -80,8 +90,8 @@ ChatAI-DataLab/
 
 ### Status snapshot (Framework v1.0.0 · Nov 2025)
 
-- ✅ **Frontend instrumentation shipped** — `chatai/frontend/src/components/PromptRecorder.tsx` records keystrokes, pauses, snapshots, and submits a single `/api/chat` payload with optimistic UI updates.
-- ✅ **FastAPI storage + relay live** — `POST /api/chat` in `chatai/backend/app/api/routes.py` persists interactions via the SQLAlchemy models in `app/models.py`, captures metadata/LLM output, and returns latency stats.
+- ✅ **Frontend instrumentation shipped** — `playground/frontend/src/components/PromptRecorder.tsx` records keystrokes, pauses, snapshots, and submits a single `/api/chat` payload with optimistic UI updates.
+- ✅ **FastAPI storage + relay live** — `POST /api/chat` in `playground/backend/app/api/routes.py` persists interactions via the SQLAlchemy models in `app/models.py`, captures metadata/LLM output, and returns latency stats.
 - ✅ **Repo hygiene enforced** — Automated sweeps via the Search Toolkit confirm no first-party `TODO` or "unimplemented" markers remain; any new TODOs require justification + ticket references.
 
 ### 4.1 Frontend Instrumentation
@@ -118,15 +128,18 @@ ChatAI-DataLab/
 
 ### 4.3 Database Considerations
 
-- Already Started with SQLite under `data/interactions.db` for zero-config; ensure the file lives on a mounted volume so Docker, local dev, and remote VMs share the same data.
+- The Playground selects a provider via `DATABASE_PROVIDER` (`sqlite`, `json`, or `cosmos`). Run `python scripts/playground_store.py summary` to confirm the active backend, or `python scripts/playground_store.py interactions --json` to dump recent rows without hand-writing SQL.
+- File-backed runs default `DATABASE_PATH` to `data/interactions.db`, but treat it as an implementation detail surfaced through env vars or `python scripts/playground_store.py ...`. Only mount/share that path when you intentionally opt into SQLite; JSON/Cosmos providers ignore the file and automatically hydrate their own backing store.
 - Keep items < 2 MB to ensure easy migration to Cosmos DB or PostgreSQL later; store large assets (audio, images) by reference (blob URLs, Drive links).
 - Future-proof with partition-friendly identifiers (e.g., `tenantId:userId:sessionId`).
 
-## 5. DataLab — Insight Workspace
+## 5. Kitchen — Notebook Workspace
+
+The Kitchen fully replaces the old DataLab helpers. New Recipes and Cookbooks live under `kitchen/`, while frozen notebooks reside under `legacy/datalab/` for historical reference. Treat `kitchen/` as the sole source of truth for new work; the legacy archive is read-only.
 
 ### 5.1 Environment & Dependencies
 
-List to pin in `datalab/requirements.txt`:
+List to pin in `kitchen/requirements.txt` (superset of the former DataLab requirements):
 
 | Purpose | Packages |
 |---------|----------|
@@ -136,27 +149,35 @@ List to pin in `datalab/requirements.txt`:
 | NLP | `spacy`, `nltk`, `textstat` |
 | Modeling | `scikit-learn`, `umap-learn` |
 
-### 5.2 Typical Workflow
+### 5.2 Recipe authoring workflow
 
-1. **Launch**: `cd datalab && source venv/bin/activate && jupyter lab` (or run the Docker service).
+1. **Launch**: `cd kitchen && source venv/bin/activate && jupyter lab` (or run the Docker service). Only open `legacy/datalab/notebooks/` when inspecting archived runs.
 2. **Connect to data**:
-	```python
-	import sqlite3, json
-	import pandas as pd
+	```
+	import json
+	from kitchen.scripts.metrics import load_interactions
 
-	conn = sqlite3.connect("../data/interactions.db")
-	df = pd.read_sql_query("SELECT * FROM interactions", conn)
+	df = load_interactions(limit=500)  # honors DATABASE_PROVIDER (sqlite/json/cosmos)
 	meta = df["typing_metadata_json"].apply(json.loads)
 	```
-3. **Feature engineering**: explode keystrokes/pause arrays, compute WPM, hesitation counts, etc.
+3. **Define layouts and logic**: declare widget trees, bind them to backend endpoints, and emit manifest snapshots from within the Recipe.
 4. **Visualization**: build static charts (Matplotlib/Seaborn) or interactive dashboards (Plotly) showing pause heatmaps, average typing speed vs. response quality, etc.
-5. **Packaging insights**: store reusable helpers inside `datalab/scripts/` (e.g., `metrics.py`, `visuals.py`) and import them into notebooks to stay DRY.
+5. **Packaging & publishing**: store reusable helpers inside `kitchen/scripts/` and export Cookbooks that the backend can promote into Playgrounds.
 
-### 5.3 Elements Templates
+### 5.3 Cookbooks, Recipes & Elements
 
-- `datalab/scripts/elements.py` centralizes sample graph presets plus helpers for summarizing, validating, and simulating Elements DAGs in pure Python.
-- Two Papermill-friendly notebooks — `elements_playground.ipynb` and `elements_reporting.ipynb` — now live under `datalab/notebooks/` to demonstrate graph inspection, dry-run execution, and report generation that mirrors the backend `/api/elements` service.
-- Both notebooks default to local presets but can accept overrides/graph IDs via Papermill parameters, keeping the Control Center UI, backend API, and notebook workflows aligned.
+- `kitchen/scripts/elements.py` centralizes sample graph presets plus helpers for summarizing, validating, and simulating Elements DAGs in pure Python.
+- Papermill-friendly notebooks such as `kitchen/notebooks/welcome_cookbook.ipynb` (new) and the archived `legacy/datalab` copies (`elements_playground.ipynb`, `elements_reporting.ipynb`) demonstrate graph inspection, dry-run execution, and report generation that mirrors the backend `/api/elements` service.
+- Cookbooks accept overrides/graph IDs via Papermill parameters, keeping the Control Center UI, backend API, and Kitchen workflows aligned.
+- The Welcome Cookbook ships five Recipes (Orientation, Getting Started, Tutorial Build, Sample Playground, Advanced Integrations) and autoloads for new Kitchen sessions.
+
+### 5.4 Manifest publishing workflow
+
+- The backend now exposes `/api/playgrounds/{tenant}/{playground}/manifests` for Kitchen-driven publishing. Each POST stores an immutable row inside the `playground_manifests` table (tenant, playground, revision, checksum, cookbook/recipe metadata).
+- Companion GET routes (`/manifests`, `/manifests/latest`, `/manifests/{revision}`) let the Control Surface and deployment tooling diff or roll back manifests without scraping notebooks.
+- Kitchen notebooks import `kitchen/scripts/manifest.py` and use `ManifestPublisher`, which respects `PLAYGROUND_API_URL` (default `http://localhost:8000/api`) and optional `KITCHEN_AUTHOR` env vars for attribution.
+- The Welcome Cookbook now calls `publish_manifest_snapshot(...)`, so Recipe 1 publishes a preview and Recipe 3 promotes the tutorial manifest via the real API rather than the old print-only mock.
+- Revisions auto-increment per namespace. Provide an optional `revision_label` (e.g., `v0`, `alpha`) to preserve notebook semantics while checksums guarantee diffable audit trails.
 
 ## 6. Deployment & Automation
 
@@ -165,7 +186,7 @@ List to pin in `datalab/requirements.txt`:
 The installer is now distro-aware and idempotent:
 
 - Detects `apt` (Debian/Ubuntu) or `pacman` (Arch) and installs Python 3, Node.js, npm, and Git. If neither is present it prints manual instructions.
-- Creates isolated `.venv` folders inside `chatai/backend` and `datalab`, upgrades `pip`, installs pinned requirements, and builds the frontend bundle.
+- Creates isolated `.venv` folders inside `playground/backend` and `kitchen`, upgrades `pip`, installs pinned requirements, and builds the frontend bundle.
 - Calls `scripts/fetch_assets.sh` only when it exists/executable, so clean clones don’t fail if large-asset automation hasn’t been defined yet.
 - Prints the exact commands to start each service once provisioning finishes.
 
@@ -184,7 +205,7 @@ Linux hosts (bare metal, VPS, Codespaces, WSL, or containers) get a Bash-native 
 
 Key features:
 
-- Manages `backend`, `frontend`, and `datalab` jobs via PID files under `.labctl/state` and streams logs from `.labctl/logs`.
+- Manages `backend`, `frontend`, and `kitchen` jobs via PID files under `.labctl/state` and streams logs from `.labctl/logs`.
 - Supports `start`, `stop`, `restart`, `status`, `logs`, and meta commands (`start-all`, `stop-all`).
 - Provides `backup`/`restore` using `tar` archives plus `install` to rerun `scripts/setup.sh`.
 - Includes `remote` subcommand that tunnels any action over SSH, e.g. `./scripts/labctl.sh remote ubuntu@edge ./opt/ChatAI-DataLab start-all`.
@@ -205,12 +226,14 @@ On Windows you can bridge into the Linux workflow with WSL or Git Bash using `In
 
 | Service | Image/Context | Purpose |
 |---------|---------------|---------|
-| `chatai` | `./chatai` | Builds FastAPI backend, serves compiled frontend via `uvicorn` + `StaticFiles` |
-| `web` | `nginx:alpine` (optional) | CDN-like caching + TLS termination for the SPA |
-| `datalab` | `jupyter/minimal-notebook` or custom image | Starts JupyterLab with repo mounted | 
-| `db` | `sqlite` volume | Bind-mount `data/` for durability |
+| `playground-api` | `./playground/backend` (multi-stage image defined in the new `playground/Dockerfile` tree) | FastAPI service plus background workers; exposes `/api/*` and health probes. |
+| `playground-frontend` | `./playground/frontend` (same Dockerfile tree as above, different target) | Serves the compiled Control Center SPA through Vite’s preview server or an nginx stage. |
+| `kitchen` | `./kitchen` (extends `jupyter/minimal-notebook`) | Launches JupyterLab with Kitchen notebooks + Papermill helpers pre-installed. |
+| `db` | Named volume mounted at `/data` | Persists `data/interactions.db`, telemetry ledgers, and manifest exports so all containers see the same state. |
 
-All services share the `./data` volume for `interactions.db`, ensuring the DataLab reflects newly ingested conversations instantly.
+> _Status_: the compose file is being rebuilt around the `playground/*` layout. Until it lands, treat this table as the target topology for the next iteration and continue running services via `labctl` / LabControl.
+
+All services share the `./data` volume whenever the SQLite provider is active, ensuring the Kitchen notebooks reflect newly ingested conversations instantly. JSON/Cosmos providers skip the filesystem coupling but still hydrate Kitchen notebooks through the shared data store helpers.
 
 ### 6.4 PowerShell Control Center
 
@@ -233,13 +256,13 @@ Key commands (each proxies to standard `Start-Job` / `Stop-Job` primitives but m
 |---------|-------------|
 | `Start-LabJob -Name backend` | Launch FastAPI (`uvicorn`) as a background job with proper `PYTHONPATH`. |
 | `Start-LabJob -Name frontend` | Run the Vite dev server (`npm run dev -- --host`). |
-| `Start-LabJob -Name datalab` | Boot Jupyter Lab in no-browser mode. |
+| `Start-LabJob -Name kitchen` | Boot Jupyter Lab in no-browser mode. |
 | `Start-AllLabJobs` / `Stop-AllLabJobs -Force` | Meta controls to bring the full stack up/down. |
 | `Restart-LabJob -Name frontend` / `Restart-AllLabJobs` | Convenience resets for flaky dev servers. |
 | `Show-LabJobs` / `Receive-LabJobOutput -Name backend` | Inspect job states and stream buffered logs. |
 | `Remove-LabJob -Name tail` | Forcefully stop and remove any lab job. |
 | `Save-LabWorkspace` / `Restore-LabWorkspace -ArchivePath <zip>` | Snapshot or restore repo + data into timestamped archives under `backups/`. |
-| `Install-LabDependencies -Target backend|frontend|datalab|all` | Reinstall per-project dependencies (creates `.venv` envs + runs `npm install`). |
+| `Install-LabDependencies -Target backend|frontend|kitchen|all` | Reinstall per-project dependencies (creates `.venv` envs + runs `npm install`). |
 | `New-LabPackage` | Builds the frontend, runs backend pytest, and emits a release zip (also under `backups/`). |
 
 `Invoke-LabControlCenter` renders an at-a-glance dashboard showing job status plus the most useful commands so you can treat the PowerShell terminal like a mini operations console from inside VS Code. When you need to interact with Linux copies of the project from Windows, run `Invoke-LabUnixControl status` (optionally `-Distribution Ubuntu-22.04`) to proxy any Bash command through WSL, or call `Invoke-LabUnixControl start-all` to spin up the entire stack without leaving PowerShell.
@@ -247,8 +270,8 @@ Key commands (each proxies to standard `Start-Job` / `Stop-Job` primitives but m
 ## 7. Operational Practices & Change Tracking
 
 1. **Secrets management**: Store API keys in repo-local `.env` files that FastAPI and notebooks consume via `python-dotenv`. Never commit secrets; production deployments should source them from managed vaults (Azure Key Vault, AWS Secrets Manager, etc.).
-2. **Test + notebook parity**: `chatai/backend/tests` and `datalab/tests` provide regression coverage for the recorder payload, FastAPI schema validation, metrics helpers, and Papermill notebooks. Extend these suites before modifying public endpoints or notebook contracts.
-3. **Observability hooks**: Structured logging, the Search Toolkit presets, and the new `data/search_telemetry.db` (hydrated from `logs/search-history.jsonl`) form the baseline telemetry story. Run `Update-LabSearchTelemetry` (or the LabControl `-RunSearchTelemetryIngestion` flag) plus `Get-SearchHistory` before every milestone cut so Ops Deck widgets can trend hygiene sweeps.
+2. **Test + notebook parity**: `playground/backend/tests` and `kitchen/tests` provide regression coverage for the recorder payload, FastAPI schema validation, metrics helpers, and Papermill notebooks. Extend these suites before modifying public endpoints or notebook contracts.
+3. **Observability hooks**: Structured logging, the Search Toolkit presets, and the new `data/search_telemetry.json` ledger (hydrated from `logs/search-history.jsonl`) form the baseline telemetry story. Run `Update-LabSearchTelemetry` (or the LabControl `-RunSearchTelemetryIngestion` flag) plus `Get-SearchHistory` before every milestone cut so Ops Deck widgets can trend hygiene sweeps.
 4. **Change documentation**: Every shipped addition must (a) add a dated entry to the “Expanded Functionality” table above, (b) append a record to `docs/GOALS_AND_ACHIEVEMENTS.md`, and (c) update relevant tags/configs. Ideas that are not yet implemented stay out of this file.
 
 With the framework baseline locked, this overview now functions as the source of truth for what is production-ready. Treat any future edits as release notes for implemented work only.

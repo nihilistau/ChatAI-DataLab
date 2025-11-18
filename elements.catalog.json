@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://chatai-datalab/elements-catalog",
+  "$id": "https://chatai-kitchen/elements-catalog",
   "catalogVersion": "0.1.0",
   "elements": [
     {

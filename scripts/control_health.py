@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-"""Lightweight health check utility for the ChatAI + DataLab stack."""
+"""Lightweight health check utility for the Playground stack."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import os
-import sqlite3
 import sys
 import time
 import urllib.error
@@ -14,30 +13,50 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict
 
-from datalab.diagnostics import append_diagnostic_record
-from datalab.lab_paths import data_path, describe_environment, get_lab_root
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from kitchen.diagnostics import append_diagnostic_record
+from kitchen.lab_paths import data_path, describe_environment, get_lab_root
+from playground.backend.app.config import get_settings
+from playground.backend.app.services.data_store import data_store_context
 
 DEFAULT_STATUS_URL = "http://localhost:8000/api/control/status"
 
 
-def check_database(path: Path) -> dict[str, Any]:
-    payload: dict[str, Any] = {"path": str(path)}
-    if not path.exists():
-        payload["status"] = "missing"
-        return payload
+def check_data_store() -> dict[str, Any]:
+    settings = get_settings()
+    payload: dict[str, Any] = {"provider": settings.database_provider}
+
+    sqlite_path: Path | None = None
+    if settings.database_provider == "sqlite":
+        sqlite_path = Path(settings.database_path).expanduser()
+        payload["path"] = str(sqlite_path)
+        payload["size_bytes"] = sqlite_path.stat().st_size if sqlite_path.exists() else 0
+        if not sqlite_path.exists():
+            payload["status"] = "missing"
+            return payload
 
     try:
-        conn = sqlite3.connect(path)
-        try:
-            row = conn.execute("SELECT COUNT(1) FROM interactions").fetchone()
-            payload["records"] = int(row[0]) if row else 0
+        with data_store_context() as store:
+            count = store.count_interactions()
+            payload["interaction_count"] = count
+            latest = store.list_interactions(limit=3)
+            payload["latest_interactions"] = [
+                {
+                    "id": item.id,
+                    "model": item.model_name,
+                    "prompt_preview": item.user_prompt_text[:80],
+                    "created_at": item.created_at.isoformat(),
+                }
+                for item in latest
+            ]
             payload["status"] = "ok"
-        finally:
-            conn.close()
-    except sqlite3.Error as exc:  # pragma: no cover - defensive guard
+    except Exception as exc:  # pragma: no cover - defensive guard
         payload["status"] = "error"
         payload["error"] = str(exc)
-    payload["size_bytes"] = path.stat().st_size if path.exists() else 0
+
     return payload
 
 
@@ -109,7 +128,7 @@ def format_summary(overall: str, checks: Dict[str, dict[str, Any]]) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="ChatAI Control health probe")
+    parser = argparse.ArgumentParser(description="Playground control health probe")
     parser.add_argument("--status-url", default=DEFAULT_STATUS_URL, help="Control status endpoint to query")
     parser.add_argument(
         "--db-path",
@@ -122,9 +141,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    db_path = Path(args.db_path).expanduser().resolve()
+    if "--db-path" in sys.argv:
+        os.environ["DATABASE_PATH"] = str(Path(args.db_path).expanduser().resolve())
     checks = {
-        "database": check_database(db_path),
+        "data_store": check_data_store(),
         "control_status": check_status_endpoint(args.status_url),
         "environment": check_environment(),
     }

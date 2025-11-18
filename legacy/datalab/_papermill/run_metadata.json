@@ -1,0 +1,10 @@
+{
+  "lab_root": "D:\\Files\\Code 3\\ChatAI-DataLab",
+  "lab_root_env": "D:\\Files\\Code 3\\ChatAI-DataLab",
+  "cwd": "D:\\Files\\Code 3\\ChatAI-DataLab\\kitchen\\notebooks",
+  "python_executable": "C:/Program Files/Python313/python.exe",
+  "db_source": "C:\\Users\\Nihil\\AppData\\Local\\Temp\\pytest-of-Nihil\\pytest-99\\test_notebooks_execute_control0\\interactions.db",
+  "control_status_url": "http://localhost:8000/api/control/status",
+  "output_dir": "_papermill",
+  "generated_at": "2025-11-17T22:38:05.249012+00:00"
+}

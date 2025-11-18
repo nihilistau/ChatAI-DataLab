@@ -12,19 +12,20 @@ Use this checklist any time you prepare an internal drop or GitHub release. It c
 
 ```bash
 # Backend
-python -m pip install -r chatai/backend/requirements.txt
-python -m pytest chatai/backend/tests -q
+python -m pip install -r playground/backend/requirements.txt
+python -m pytest playground/backend/tests -q
 
 # Telemetry + notebooks
-python -m pip install -r datalab/requirements.txt
-python -m datalab.scripts.search_telemetry ingest --log-path logs/search-history.jsonl --db-path data/search_telemetry.db
-python -m papermill datalab/notebooks/search_telemetry.ipynb datalab/notebooks/_papermill/search_telemetry-release.ipynb \
-	-p SEARCH_DB_PATH data/search_telemetry.db \
+python -m pip install -r kitchen/requirements.txt  # full Kitchen notebook deps
+python -m scripts.search_telemetry ingest --log-path logs/search-history.jsonl --output data/search_telemetry.json \
+	--runs-parquet data/search_telemetry-runs.parquet --daily-parquet data/search_telemetry-daily.parquet
+python -m papermill kitchen/notebooks/search_telemetry.ipynb kitchen/notebooks/_papermill/search_telemetry-release.ipynb \
+	-p SEARCH_LEDGER_PATH data/search_telemetry.json \
 	-p TELEMETRY_LOG_PATH logs/search-history.jsonl
 python -m pytest tests/test_notebooks.py -q
 
 # Frontend
-cd chatai/frontend
+cd playground/frontend
 npm install
 npm run lint
 npm run test
@@ -38,9 +39,9 @@ npm run storybook:playground
 
 ## 3. Collect artifacts
 
-- [ ] Zip and attach `chatai/frontend/dist/` (`control-center-dist.zip`).
-- [ ] Zip and attach `chatai/frontend/storybook-static/` and `chatai/frontend/storybook-static-playground/` (`storybook-static.zip`, `storybook-static-playground.zip`).
-- [ ] Copy the freshly executed notebooks from `datalab/notebooks/_papermill/` (Search Telemetry, Ops Response Playbook, Widget Showcase) and link them in the release body.
+- [ ] Zip and attach `playground/frontend/dist/` (`control-center-dist.zip`).
+- [ ] Zip and attach `playground/frontend/storybook-static/` and `playground/frontend/storybook-static-playground/` (`storybook-static.zip`, `storybook-static-playground.zip`).
+- [ ] Copy the freshly executed notebooks from `kitchen/notebooks/_papermill/` (Search Telemetry, Ops Response Playbook, Widget Showcase) and link them in the release body.
 - [ ] Mention the operator scripts added or updated in this release (`scripts/lab-bootstrap.ps1`, `scripts/release_checklist.ps1`, `scripts/lab-control.ps1`, etc.) so downstream users know which automation changed.
 - [ ] Capture screenshots/GIFs of the Playground UI or Storybook stories if visual changes were made.
 

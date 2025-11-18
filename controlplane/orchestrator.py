@@ -20,7 +20,7 @@ import psutil
 Runtime = Literal["auto", "windows", "linux"]
 ServiceAction = Literal["start", "stop", "restart", "status", "logs", "kill", "kill-all"]
 
-_SERVICES = ("backend", "frontend", "datalab")
+_SERVICES = ("backend", "frontend", "kitchen")
 _DEFAULT_LOG_LINES = 60
 
 

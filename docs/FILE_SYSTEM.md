@@ -6,9 +6,11 @@ This repo enforces a predictable layout so automation, Ops Deck, notebooks, and 
 
 ```
 ChatAI-DataLab/
-├── chatai/                  # Frontend + backend apps
+├── playground/             # Frontend + backend apps
 ├── controlplane/            # Cross-platform orchestrator
-├── datalab/                 # Notebooks, scripts, metrics
+├── kitchen/                 # Active notebooks, scripts, metrics helpers
+├── legacy/
+│   └── datalab/             # Read-only historical notebooks/scripts
 ├── data/                    # Databases, exported datasets
 ├── docs/                    # This guide, tutorials, install notes
 ├── configs/                 # Hash/tagging manifests & templates
@@ -24,10 +26,11 @@ ChatAI-DataLab/
 
 | Zone | Owner | Contains | Guardrails |
 | --- | --- | --- | --- |
-| `chatai/frontend` | UI | React components, styles, lib APIs | Only TypeScript/TSX; tag files with `@tag:ui` + feature-specific tags |
-| `chatai/backend` | API | FastAPI app, SQLAlchemy models, services | Python only; keep modules under 400 LOC and use section banners |
+| `playground/frontend` | UI | React components, styles, lib APIs | Only TypeScript/TSX; tag files with `@tag:ui` + feature-specific tags |
+| `playground/backend` | API | FastAPI app, SQLAlchemy models, services | Python only; keep modules under 400 LOC and use section banners |
 | `controlplane` | Ops | Orchestrators for Ops Deck, CLI, PowerShell | Avoid hard-coded paths; tag `@tag:ops` |
-| `datalab` | Insights | Notebooks, scripts, metrics helpers | Keep notebooks in `notebooks/`; helper modules under `scripts/` |
+| `kitchen` | Insights | Notebooks, scripts, metrics helpers | Keep notebooks in `notebooks/`; helper modules under `scripts/` |
+| `legacy/datalab` | Historical reference | Archived copies of notebooks/scripts from the pre-Kitchen era | Read-only; reference only when porting older work |
 | `configs` | Governance | `tags.json`, `integrity.json`, policy files | JSON/TOML only; referenced by tooling |
 | `scripts` | Tooling | Setup, lab control, integrity CLI | Sectioned comments; mention supported shells |
 

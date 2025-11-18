@@ -13,6 +13,11 @@
     "**/.ipynb_checkpoints/**",
     ".project_integrity/**",
     "backups/**",
+    "release_artifacts/**",
+    "playground/frontend/dist/**",
+    "playground/frontend/storybook-static/**",
+    "playground/frontend/storybook-static-playground/**",
+    "**/*.tsbuildinfo",
     "**/*.pyc"
   ],
   "default_tags": ["integrity"],

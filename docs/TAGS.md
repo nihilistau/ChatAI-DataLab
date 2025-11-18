@@ -14,8 +14,8 @@ Tags align code comments, Ops Deck telemetry, DataLab notebooks, and the integri
 | `ui` | Frontend components, styles, UX | Frontend maintainers |
 | `canvas` | Canvas board logic, artifacts, hypotheses | Frontend maintainers |
 | `tail-log` | Tail log integrations (UI + backend) | Full stack |
-| `notebook` | DataLab notebooks, widgets | Data scientists |
-| `metrics` | `datalab/scripts`, telemetry helpers | Data scientists |
+| `recipe` | Kitchen recipes (notebooks), widgets | Data scientists |
+| `metrics` | `kitchen/scripts`, telemetry helpers | Data scientists |
 | `telemetry` | Search/Ops telemetry ingestion, dashboards, notebooks | Data scientists + Platform |
 | `integrity` | Hash/checkpoint tooling | Platform maintainers |
 | `config` | Config manifests, policy files | Platform maintainers |
@@ -54,8 +54,8 @@ Additions require updating both this file and `configs/tags.json`.
 
 ## 4. Usage examples
 
-- `chatai/backend/app/api/routes.py` → `# @tag:backend,api,ops`
-- `chatai/frontend/src/components/TailLogCell.tsx` → `/* @tag:ui,tail-log */`
+- `playground/backend/app/api/routes.py` → `# @tag:backend,api,ops`
+- `playground/frontend/src/components/TailLogCell.tsx` → `/* @tag:ui,tail-log */`
 - `scripts/project_integrity.py` → `# @tag:setup,integrity`
 
 Tags drive filtered integrity reports (`--tags ops`) and future automation (e.g., Ops Deck filtering). Make them meaningful and consistent.

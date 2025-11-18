@@ -7,8 +7,8 @@ Usage examples::
     python scripts/project_integrity.py init --reason "fresh clone"
     python scripts/project_integrity.py status --tags backend
     python scripts/project_integrity.py checkpoint --tag release --reason "0.4.0"
-    python scripts/project_integrity.py verify chatai/backend/app/models.py
-    python scripts/project_integrity.py repair chatai/backend/app/models.py --checkpoint latest
+    python scripts/project_integrity.py verify playground/backend/app/models.py
+    python scripts/project_integrity.py repair playground/backend/app/models.py --checkpoint latest
     python scripts/project_integrity.py export backups/release.zip --checkpoint 0007
 
 The tool tracks hashes for every file (respecting inclusion/exclusion globs),
@@ -437,8 +437,8 @@ def build_parser() -> argparse.ArgumentParser:
               python scripts/project_integrity.py init --reason "fresh clone"
               python scripts/project_integrity.py status --tags backend,ui
               python scripts/project_integrity.py checkpoint --tag release --reason "0.5.0"
-              python scripts/project_integrity.py verify chatai/backend/app/models.py
-              python scripts/project_integrity.py repair chatai/backend/app/models.py --checkpoint latest
+              python scripts/project_integrity.py verify playground/backend/app/models.py
+              python scripts/project_integrity.py repair playground/backend/app/models.py --checkpoint latest
               python scripts/project_integrity.py export backups/release.zip --checkpoint 0007
             """
         ),

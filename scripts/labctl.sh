@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # @tag: scripts,shell,lab-control
-# ChatAI · DataLab Linux control utility
+# ChatAI · Kitchen Linux control utility
 # Usage: scripts/labctl.sh <command> [args]
 # Environment:
 #   LAB_REMOTE_PATH - default remote project path for the `remote` subcommand (defaults to ~/ChatAI-DataLab)
@@ -33,9 +33,9 @@ register_job() {
     JOB_ENV["$name"]="$env"
 }
 
-register_job "backend" "$ROOT_DIR/chatai/backend" "uvicorn main:app --host 0.0.0.0 --port 8000" "PYTHONPATH=$ROOT_DIR/chatai/backend"
-register_job "frontend" "$ROOT_DIR/chatai/frontend" "npm run dev -- --host" ""
-register_job "datalab" "$ROOT_DIR/datalab" "jupyter lab --ip=0.0.0.0 --no-browser" ""
+register_job "backend" "$ROOT_DIR/playground/backend" "uvicorn main:app --host 0.0.0.0 --port 8000" "PYTHONPATH=$ROOT_DIR/playground/backend"
+register_job "frontend" "$ROOT_DIR/playground/frontend" "npm run dev -- --host" ""
+register_job "kitchen" "$ROOT_DIR/kitchen" "jupyter lab --ip=0.0.0.0 --no-browser" ""
 
 list_jobs() {
     printf "%s\n" "${!JOB_CMD[@]}" | sort
@@ -169,7 +169,7 @@ backup_workspace() {
     local default_name="workspace-$(date '+%Y%m%d-%H%M%S').tar.gz"
     [[ -n "$dest" ]] || dest="$ROOT_DIR/backups/$default_name"
     mkdir -p "$(dirname "$dest")"
-    tar -czf "$dest" -C "$ROOT_DIR" chatai datalab data scripts
+    tar -czf "$dest" -C "$ROOT_DIR" playground kitchen data scripts
     echo "Backup written to $dest"
 }
 
