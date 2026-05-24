@@ -2,7 +2,7 @@
 
 _Updated: 2025-11-16_
 
-This playbook freezes feature work and enforces a habitually tested stabilization cycle for ChatAI · Kitchen. It coordinates
+This playbook freezes feature work and enforces a habitually tested stabilization cycle for ChatAI · Workshop. It coordinates
 local habits, CI jobs, GitHub milestones, and release tagging so that every change tightens the existing system and surfaces
 bugs quickly.
 
@@ -10,7 +10,7 @@ bugs quickly.
 
 1. **Freeze first** — Only merge fixes, refactors, or documentation that reduce risk. New features must wait for the next
    unlocking memo recorded in `docs/GOALS_AND_ACHIEVEMENTS.md`.
-2. **Test before touch** — Every pull request must include evidence of the full regression suite (backend, Kitchen, frontend,
+2. **Test before touch** — Every pull request must include evidence of the full regression suite (backend, Workshop, frontend,
    recipes (notebooks), Storybook, integrity). Failing jobs block merges; do not force push over red builds.
 3. **Source of truth is GitHub** — All work items live as GitHub issues tied to a `stability-week-YYYYWW` milestone. `main`
    always reflects the latest passing build.
@@ -33,23 +33,23 @@ bugs quickly.
 
 ### Local sequence (run before every push)
 
-1. `python -m pytest -q` inside `playground/backend`
-2. `python -m pytest kitchen/tests -q`
+1. `python -m pytest -q` inside `relay/backend`
+2. `python -m pytest workshop/tests -q`
 3. `python -m pytest tests/test_recipes.py -q`
-4. `npm run lint && npm run test && npm run build` inside `playground/frontend`
-5. `npm run storybook:build` and `npm run storybook:playground`
+4. `npm run lint && npm run test && npm run build` inside `relay/frontend`
+5. `npm run storybook:build` and `npm run storybook:relay`
 6. `python scripts/project_integrity.py status` (expect zero modified files outside the branch scope)
 
 Use `scripts/lab-control.ps1` / `scripts/labctl.sh` helpers to start services if interactive validation is required.
 
 ### Continuous Integration (GitHub Actions)
 
-`stability-gate` (see `.github/workflows/kitchen-notebooks.yml`) fans out into discrete jobs:
+`stability-gate` (see `.github/workflows/workshop-notebooks.yml`) fans out into discrete jobs:
 
-- **backend-tests** — Python 3.11, installs `playground/backend/requirements.txt`, runs `pytest -q`.
-- **kitchen-tests** — Python 3.11, installs `kitchen/requirements.txt`, runs both `pytest kitchen/tests -q` and
+- **backend-tests** — Python 3.11, installs `relay/backend/requirements.txt`, runs `pytest -q`.
+- **workshop-tests** — Python 3.11, installs `workshop/requirements.txt`, runs both `pytest workshop/tests -q` and
    `pytest tests/test_recipes.py -q` to execute Papermill recipes.
-- **frontend-qa** — Node 20, `npm ci`, runs `lint`, `test`, `test:playground`, and `build`.
+- **frontend-qa** — Node 20, `npm ci`, runs `lint`, `test`, `test:relay`, and `build`.
 - **storybook-builds** — Node 20, builds Storybook + Control Center Storybook for regression screenshots.
 - **integrity-scan** — Python 3.11, runs `python scripts/project_integrity.py status` and uploads summaries as artifacts.
 
@@ -75,9 +75,9 @@ Scheduled workflow (cron Sunday 02:00 UTC) is implemented and runs the full suit
 
 - **Search Toolkit** — Run `Search-LabRepo -Preset bug-hunt` (documented in `scripts/powershell/SearchToolkit.psm1`) daily to
   scan for suspicious patterns (error logs, TODOs). Log outputs to `logs/search-history.jsonl`.
-- **Lab Diagnostics** — Execute `python kitchen/diagnostics.py --quick` before shipping each fix to ensure environment health.
-- **Recipe parity** — All new diagnostics get mirrored in `kitchen/notebooks/control_center_playground.ipynb` with Papermill
-   outputs committed to `kitchen/notebooks/_papermill` for reproducibility.
+- **Lab Diagnostics** — Execute `python workshop/diagnostics.py --quick` before shipping each fix to ensure environment health.
+- **Recipe parity** — All new diagnostics get mirrored in `workshop/notebooks/control_center_relay.ipynb` with Papermill
+   outputs committed to `workshop/notebooks/_papermill` for reproducibility.
 
 ## 6. GitHub Sync Checklist
 

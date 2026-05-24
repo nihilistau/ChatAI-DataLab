@@ -1,0 +1,15 @@
+[
+  {
+    "path": "manifests\\sample.json",
+    "payload_type": "record",
+    "sections": 1,
+    "widgets": 2,
+    "actions": 1,
+    "metadata_keys": [
+      "hero"
+    ],
+    "tenant": "demo-tenant",
+    "relay": "welcome-control",
+    "revision": 3
+  }
+]

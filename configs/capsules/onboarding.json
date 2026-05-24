@@ -1,5 +1,5 @@
 {
-  "capsule_name": "onboarding",
+  "relay_name": "onboarding",
   "version": "1.0.0",
   "created": "2025-11-16T00:00:00Z",
   "environment": {
@@ -11,7 +11,7 @@
       "papermill"
     ],
     "lab_paths": {
-      "notebooks_dir": "datalab/notebooks",
+      "notebooks_dir": "workshop/notebooks",
       "data_dir": "data",
       "logs_dir": "data/logs"
     }

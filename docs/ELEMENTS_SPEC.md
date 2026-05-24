@@ -12,7 +12,7 @@ The Elements initiative introduces a modular widget system plus a drag-and-drop 
 
 1. **Reusable widget primitives** that render consistently across:
    - Control Center React/Vite frontend
-   - Storybook/Playground docs
+   - Storybook/Relay docs
    - Notebook templates (via `ipywidgets` + custom JS bridge)
 2. **Graph-based workflow builder** (“Elements Canvas”) with drag/drop nodes, linking, validation, and export/import.
 3. **Node execution service** that can evaluate graphs, call existing FastAPI endpoints, and orchestrate external tools (LLMs, data pulls, notebook runs).
@@ -32,7 +32,7 @@ The Elements initiative introduces a modular widget system plus a drag-and-drop 
 | Area | Deliverables |
 |------|--------------|
 | **Design** | Component taxonomy, interaction models, theming guidelines, wiring diagram, and UX references. |
-| **Frontend Elements library** | `packages/elements` (or `playground/frontend/src/elements/`) containing: registry, props contracts, style tokens, node palette, canvas, inspector, serialization helpers, Storybook stories, unit + E2E tests. |
+| **Frontend Elements library** | `packages/elements` (or `relay/frontend/src/elements/`) containing: registry, props contracts, style tokens, node palette, canvas, inspector, serialization helpers, Storybook stories, unit + E2E tests. |
 | **Backend node service** | FastAPI router (`/api/elements`) exposing CRUD for graphs, execution endpoint, Cosmos-friendly models, job queue adapter, guardrails for user code. |
 | **Notebook templates** | At least two Papermill-tested notebooks demonstrating Elements-driven workflows and showing how to import/export graphs. |
 | **Docs** | This spec, developer onboarding guide, README updates, diagram(s), and API reference snippets. |
@@ -164,7 +164,7 @@ Testing Requirements:
 
 ## 7. Frontend Implementation Plan
 
-1. **Package structure**: `playground/frontend/src/elements/` with subfolders `components`, `nodes`, `canvas`, `hooks`, `theme`, `state`.
+1. **Package structure**: `relay/frontend/src/elements/` with subfolders `components`, `nodes`, `canvas`, `hooks`, `theme`, `state`.
 2. **State management**: Zustand or Redux Toolkit slice for node graphs; persist to IndexedDB for offline drafts.
 3. **Canvas tech**: Evaluate `@xyflow/react`, `react-flow`, or custom D3/konva layer; wrap to enforce design tokens + accessibility.
 4. **Form builder**: Auto-generate inspector forms from `propsSchema` using `react-hook-form` + `zod` for validation.
@@ -175,8 +175,8 @@ Testing Requirements:
 
 ## 8. Notebook Integration
 
-- Provide `kitchen/notebooks/elements_playground.ipynb` and `elements_reporting.ipynb` with Papermill parameters (legacy copies remain under `legacy/datalab` purely for archival reference).
-- Create Python module `kitchen/scripts/elements.py` (formerly re-exported by the now-removed `legacy/datalab` shim) that can:
+- Provide `workshop/notebooks/elements_relay.ipynb` and `elements_reporting.ipynb` with Papermill parameters (archived copies live under `legacy/archives` purely for reference).
+- Create Python module `workshop/scripts/elements.py` that can:
   - Load `elements.schema.json`.
   - Convert graph JSON into ordered execution steps.
   - Emit helper cells or run graphs entirely in Python.
@@ -186,7 +186,7 @@ Testing Requirements:
 
 ## 9. Documentation & DX
 
-- Update `README.md` + `docs/CONTROL_CENTER_PLAYGROUND.md` with quick-start instructions for the Elements Canvas.
+- Update `README.md` + `docs/CONTROL_CENTER_RELAY.md` with quick-start instructions for the Elements Canvas.
 - Add architecture diagram (draw.io export) + GIF demo once UI prototype exists.
 - Provide API reference tables for `/api/elements/*`, including response samples + error codes.
 - Ship CLI helpers (`scripts/control_center.py elements ...`) to list nodes, run graphs, and validate schema.
@@ -229,10 +229,10 @@ Testing Requirements:
 
 | Area | Status | Evidence | Remaining gaps |
 | --- | --- | --- | --- |
-| Shared schema + catalog | ✅ Complete | `elements.catalog.json`, `elements.schema.json`, TS mirror (`playground/frontend/src/elements/schema.ts`), Python mirror (`kitchen/elements/schema.py`), and regression tests in `tests/test_elements_schema.py`. | Keep catalog generator automated (right now edits are manual) and add CI guard to diff TS/Python hashes.
-| Frontend Elements library | ✅ Rendering & state ready | React Flow canvas + palettes + inspector live under `playground/frontend/src/elements/*` (`GraphCanvas.tsx`, `NodePalette.tsx`, `ElementsWorkbench.tsx`, Zustand store). Storybook stories exist but still need Chromatic/regression wiring. | Add keyboard shortcuts, accessibility sweeps, and screenshot tests (Playwright/Chromatic) per §7 plan.
-| Backend graph + executor service | ✅ CRUD + sync execution | FastAPI router `playground/backend/app/api/elements.py`, SQLAlchemy models (`app/models.py`), and deterministic executor (`app/services/elements.py`) cover graph CRUD + synchronous runs. | Cosmos DB / HPK persistence not implemented yet; execution is in-process only (no async queue / WebSocket stream / guardrails for untrusted code).
-| Notebook parity | ✅ Demonstrated | `kitchen/notebooks/elements_playground.ipynb`, `elements_reporting.ipynb`, and helper module `kitchen/scripts/elements.py` run via Papermill; enforced in `tests/test_notebooks.py`. | Add user-facing tutorial docs / GIF and ensure notebooks round-trip graph exports/imports once canvas writer ships.
+| Shared schema + catalog | ✅ Complete | `elements.catalog.json`, `elements.schema.json`, TS mirror (`relay/frontend/src/elements/schema.ts`), Python mirror (`workshop/elements/schema.py`), and regression tests in `tests/test_elements_schema.py`. | Keep catalog generator automated (right now edits are manual) and add CI guard to diff TS/Python hashes.
+| Frontend Elements library | ✅ Rendering & state ready | React Flow canvas + palettes + inspector live under `relay/frontend/src/elements/*` (`GraphCanvas.tsx`, `NodePalette.tsx`, `ElementsWorkbench.tsx`, Zustand store). Storybook stories exist but still need Chromatic/regression wiring. | Add keyboard shortcuts, accessibility sweeps, and screenshot tests (Playwright/Chromatic) per §7 plan.
+| Backend graph + executor service | ✅ CRUD + sync execution | FastAPI router `relay/backend/app/api/elements.py`, SQLAlchemy models (`app/models.py`), and deterministic executor (`app/services/elements.py`) cover graph CRUD + synchronous runs. | Cosmos DB / HPK persistence not implemented yet; execution is in-process only (no async queue / WebSocket stream / guardrails for untrusted code).
+| Notebook parity | ✅ Demonstrated | `workshop/notebooks/elements_relay.ipynb`, `elements_reporting.ipynb`, and helper module `workshop/scripts/elements.py` run via Papermill; enforced in `tests/test_notebooks.py`. | Add user-facing tutorial docs / GIF and ensure notebooks round-trip graph exports/imports once canvas writer ships.
 | CLI & tooling surface | ✅ Added in this change | `python scripts/control_center.py elements catalog|validate|run` lists nodes, validates graphs/presets, and executes DAGs via the shared GraphExecutor. The PowerShell Librarian (`Invoke-LabSearchLibrarian` + `scripts/lab-control.ps1 -RunSearchLibrarian`) now prunes/archives search history before kicking off telemetry ingestion. | Extend CLI with `elements lint` (schema drift checks) + remote `/api/elements` invocations. Wire Librarian output into automated telemetry ingestion jobs.
 | Persistence & collaboration | 🚧 In progress | Tenant/workspace columns exist on `ElementGraph`, but Cosmos DB adapters + hierarchical partition keys called out in §1.2/§5.2 are still TODO. | Build repository abstraction that targets Cosmos containers, preserves HPK (`tenantId/workspaceId`), and stores versioned graph revisions + undo history.
 | Execution safeguards | 🚧 In progress | Graph executor currently supports prompt/llm/notebook adapters only; no sandboxing, queueing, or long-running job orchestration. | Implement async job runner (RQ/Celery/TaskGroup), per-node timeout/heartbeat, and guardrails for user-provided code + webhooks per §6. |
@@ -241,5 +241,5 @@ Testing Requirements:
 
 1. **Cosmos DB + HPK implementation:** add repository + storage adapters so graph CRUD can persist beyond SQLite and align with the partition guidance in §1.2/§5.2.
 2. **Execution resiliency:** extend `GraphExecutor` to hand off notebook/webhook nodes to background jobs with progress tracking, failure isolation, and cancellation.
-3. **Canvas accessibility + automation:** add keyboard shortcuts, focus rings, and screenshot tests to the React entry points plus a doc walkthrough under `docs/CONTROL_CENTER_PLAYGROUND.md`.
+3. **Canvas accessibility + automation:** add keyboard shortcuts, focus rings, and screenshot tests to the React entry points plus a doc walkthrough under `docs/CONTROL_CENTER_RELAY.md`.
 4. **CLI + telemetry polish:** add `elements lint` / `elements push` subcommands, plus a scheduled Librarian run (via LabControl) that archives weekly and refreshes the SQLite telemetry DB used by Ops Deck widgets.

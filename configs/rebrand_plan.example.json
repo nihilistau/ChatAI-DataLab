@@ -1,0 +1,36 @@
+{
+  "renames": [
+    { "source": "playground", "target": "relay" },
+    { "source": "kitchen", "target": "workshop" }
+  ],
+  "copies": [
+    {
+      "source": "workshop/notebooks/control_center_playground.ipynb",
+      "target": "workshop/notebooks/control_center_relay.ipynb",
+      "overwrite": true
+    },
+    {
+      "source": "workshop/notebooks/elements_playground.ipynb",
+      "target": "workshop/notebooks/elements_relay.ipynb",
+      "overwrite": true
+    }
+  ],
+  "replacements": [
+    {
+      "find": "playground",
+      "replace": "relay",
+      "globs": ["**/*.md", "relay/frontend/src/**/*.ts*", "docs/**/*.md", "configs/**/*.json"],
+      "excludes": ["release_artifacts/**"]
+    },
+    {
+      "find": "Kitchen",
+      "replace": "Workshop",
+      "globs": ["**/*.md", "docs/**/*.md"],
+      "excludes": ["release_artifacts/**"]
+    }
+  ],
+  "commands": [
+    { "name": "pytest", "cmd": ["python", "-m", "pytest"], "continue_on_error": false },
+    { "name": "frontend-check", "cmd": ["npm", "run", "check"], "cwd": "relay/frontend", "continue_on_error": false }
+  ]
+}

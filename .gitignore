@@ -20,11 +20,11 @@ venv/
 
 # Integrity + diagnostics artifacts
 .project_integrity/
-kitchen/_papermill/
-kitchen/notebooks/_papermill/
+workshop/_papermill/
+workshop/notebooks/_papermill/
 **/.ipynb_checkpoints/
 **/*.out.ipynb
-kitchen/notebooks/DB_PATH
+workshop/notebooks/DB_PATH
 
 # Local data caches
 data/*.db
@@ -46,4 +46,4 @@ Thumbs.db
 
 *storybook.log
 storybook-static
-storybook-static-playground
+storybook-static-relay

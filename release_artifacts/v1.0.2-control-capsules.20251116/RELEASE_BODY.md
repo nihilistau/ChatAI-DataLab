@@ -6,7 +6,7 @@
 - **Backend guardrails** (ix(backend): harden guardrails and command services)
   - Tightened FastAPI validation, safer command routing, and better diagnostics for Ops Deck telemetry ingestion.
 - **Frontend ops design system** (hardening(frontend): expand ops design system)
-  - Refreshed blueprint tokens, Control Center widgets, Storybook playground coverage, and rebuilt dist/storybook assets.
+  - Refreshed blueprint tokens, Control Center widgets, Storybook relay coverage, and rebuilt dist/storybook assets.
 - **Doc + workflow codification** (docs(ops): codify stability guardrails, chore(release): publish control capsule handbook)
   - New Operations Handbook, release checklist updates, and handbook-driven integrity workflow for future capsules.
 - **DataLab + scripts bundle** (eat(datalab): wire control center lab assets)
@@ -23,7 +23,7 @@ Attach these assets directly from `release_artifacts/v1.0.2-control-capsules.202
 
 1. `control-center-dist.zip`
 2. `storybook-static.zip`
-3. `storybook-static-playground.zip`
+3. `storybook-static-relay.zip`
 4. Notebooks (upload individually):
   - `notebooks/search_telemetry-executed.ipynb`
   - `notebooks/ops_response_playbook.ipynb`

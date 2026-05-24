@@ -23,8 +23,8 @@ chmod +x scripts/setup.sh
 What the script does:
 
 1. Detects package manager (`apt`, `pacman`) and installs Python, Node, and Git if missing.
-2. Creates `.venv` folders for `playground/backend` and `kitchen`, upgrades `pip`, installs `requirements.txt` files.
-3. Runs `npm install` + `npm run build` inside `playground/frontend`.
+2. Creates `.venv` folders for `relay/backend` and `workshop`, upgrades `pip`, installs `requirements.txt` files.
+3. Runs `npm install` + `npm run build` inside `relay/frontend`.
 4. Prints next-step commands for backend/frontend/DataLab runners.
 
 Re-running the script is safe; it refreshes dependencies and rebuilds the frontend bundle.
@@ -37,7 +37,7 @@ Re-running the script is safe; it refreshes dependencies and rebuilds the fronte
 pwsh -ExecutionPolicy Bypass -File scripts/lab-control.ps1 -ControlCenter
 ```
 
-- Launches the Lab Control dashboard with buttons to start/stop backend, frontend, and Kitchen.
+- Launches the Lab Control dashboard with buttons to start/stop backend, frontend, and Workshop.
 - Provides `Invoke-LabUnixControl` to bridge into WSL if you need Linux-specific orchestration.
 
 ### Linux / macOS / WSL
@@ -55,7 +55,7 @@ pwsh -ExecutionPolicy Bypass -File scripts/lab-control.ps1 -ControlCenter
 
 1. **Backend health**: `curl http://localhost:8000/health` → `{ "status": "ok" }`.
 2. **Frontend dev server**: visit `http://localhost:5173` and submit a prompt; you should see Tail Log entries for keystrokes and Ops Deck polls.
-3. **Kitchen notebook**: `cd kitchen && . .venv/bin/activate && jupyter lab` then open `notebooks/hypothesis_control.ipynb` (the `legacy/datalab` tree is read-only for archival reference).
+3. **Workshop notebook**: `cd workshop && . .venv/bin/activate && jupyter lab` then open `notebooks/hypothesis_control.ipynb` (the `legacy/archives` tree is read-only for archival reference).
 4. **Integrity baseline**: `python scripts/project_integrity.py status` should report `0 changed` right after a checkpoint.
 
 ## 5. Troubleshooting
@@ -63,9 +63,9 @@ pwsh -ExecutionPolicy Bypass -File scripts/lab-control.ps1 -ControlCenter
 | Symptom | Fix |
 | --- | --- |
 | `uvicorn` cannot import `controlplane` | Run the backend from the repo root or set `PYTHONPATH` to `.` |
-| Tail logs empty | Ensure `playground/backend` migrations ran (startup creates tables) and Ops Deck can reach `/api/tail-log` |
+| Tail logs empty | Ensure `relay/backend` migrations ran (startup creates tables) and Ops Deck can reach `/api/tail-log` |
 | `node-gyp` build failures | Install build tools (`xcode-select --install` on macOS, `build-essential` on Linux, VS Build Tools on Windows) |
-| Notebook widgets missing | `pip install -r kitchen/requirements.txt` and restart the Jupyter kernel |
+| Notebook widgets missing | `pip install -r workshop/requirements.txt` and restart the Jupyter kernel |
 
 ## 6. Next steps
 

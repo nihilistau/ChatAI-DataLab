@@ -2,7 +2,7 @@
   {
     "id": "5424c65e-c9da-47b4-902a-b5af80d0adaf",
     "label": "Manifest validator (onboarding)",
-    "command": "python scripts/manifest_validator.py configs/capsules/onboarding.json --json --expect-tenant demo-tenant --expect-playground welcome-control",
+    "command": "python scripts/manifest_validator.py configs/relays/onboarding.json --json --expect-tenant demo-tenant --expect-relay welcome-control",
     "created_at": "2025-11-17T02:27:20.783632+00:00",
     "added_by": null,
     "tags": [
@@ -18,16 +18,16 @@
   },
   {
     "id": "1d5a8d6c-9c53-4c5f-9ef0-5733b1c4fd73",
-    "label": "Kitchen · start all jobs",
-    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Kitchen-Job-StartAll\"",
+    "label": "Workshop · start all jobs",
+    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Workshop-Job-StartAll\"",
     "created_at": "2025-01-14T04:00:00.000000+00:00",
     "added_by": null,
     "tags": [
-      "kitchen",
+      "workshop",
       "jobs",
       "start"
     ],
-    "description": "Use the noun-first Kitchen command surface to trigger every queued job (wraps Start-AllLabJobs).",
+    "description": "Use the noun-first Workshop command surface to trigger every queued job (wraps Start-AllLabJobs).",
     "working_dir": null,
     "last_status": "never-run",
     "last_run_at": null,
@@ -35,16 +35,16 @@
   },
   {
     "id": "a3df72da-8947-4bcb-807d-5c6a730521ee",
-    "label": "Kitchen · stop all jobs",
-    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Kitchen-Job-StopAll\"",
+    "label": "Workshop · stop all jobs",
+    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Workshop-Job-StopAll\"",
     "created_at": "2025-01-14T04:00:01.000000+00:00",
     "added_by": null,
     "tags": [
-      "kitchen",
+      "workshop",
       "jobs",
       "stop"
     ],
-    "description": "Gracefully stop every running Kitchen job via the new Kitchen-Job-StopAll alias (force flag removed for catalog safety).",
+    "description": "Gracefully stop every running Workshop job via the new Workshop-Job-StopAll alias (force flag removed for catalog safety).",
     "working_dir": null,
     "last_status": "never-run",
     "last_run_at": null,
@@ -52,16 +52,16 @@
   },
   {
     "id": "64a3d67b-5a3f-4bd9-9c25-03a86cf69fb9",
-    "label": "Kitchen · job dashboard",
-    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Kitchen-Job-Show\"",
+    "label": "Workshop · job dashboard",
+    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Workshop-Job-Show\"",
     "created_at": "2025-01-14T04:00:02.000000+00:00",
     "added_by": null,
     "tags": [
-      "kitchen",
+      "workshop",
       "jobs",
       "status"
     ],
-    "description": "List all Kitchen jobs with their state and timestamps (alias for Show-LabJobs).",
+    "description": "List all Workshop jobs with their state and timestamps (alias for Show-LabJobs).",
     "working_dir": null,
     "last_status": "never-run",
     "last_run_at": null,
@@ -69,16 +69,84 @@
   },
   {
     "id": "0c5f9ee3-efdc-4590-ae1e-d077f3defe48",
-    "label": "Kitchen · job snapshot",
-    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Kitchen-Job-Snapshot\"",
+    "label": "Workshop · job snapshot",
+    "command": "pwsh -NoProfile -Command \"Import-Module ./scripts/powershell/LabControl.psm1 -DisableNameChecking; Workshop-Job-Snapshot\"",
     "created_at": "2025-01-14T04:00:03.000000+00:00",
     "added_by": null,
     "tags": [
-      "kitchen",
+      "workshop",
       "jobs",
       "snapshot"
     ],
-    "description": "Capture the Kitchen job manifest snapshot for tail-log troubleshooting (wraps Get-LabJobSnapshot).",
+    "description": "Capture the Workshop job manifest snapshot for tail-log troubleshooting (wraps Get-LabJobSnapshot).",
+    "working_dir": null,
+    "last_status": "never-run",
+    "last_run_at": null,
+    "history": []
+  },
+  {
+    "id": "2d41d19a-6b43-4ade-9c78-d6d5a743b9bc",
+    "label": "Rebrand · dry run",
+    "command": "python scripts/rebrand_reset.py --config configs/rebrand_plan.example.json --dry-run",
+    "created_at": "2025-11-20T10:15:00.000000+00:00",
+    "added_by": null,
+    "tags": [
+      "rebrand",
+      "automation",
+      "safety"
+    ],
+    "description": "Preview the config-driven rename/reset workflow without modifying files (mirrors control_center.py rebrand --dry-run).",
+    "working_dir": null,
+    "last_status": "never-run",
+    "last_run_at": null,
+    "history": []
+  },
+  {
+    "id": "5bb9a4d1-b7ae-4c83-8aef-4f6b7e966a65",
+    "label": "Rebrand · apply plan",
+    "command": "python scripts/rebrand_reset.py --config configs/rebrand_plan.example.json",
+    "created_at": "2025-11-20T10:15:01.000000+00:00",
+    "added_by": null,
+    "tags": [
+      "rebrand",
+      "automation",
+      "ops"
+    ],
+    "description": "Execute the current rebrand plan (edit configs/rebrand_plan.example.json or pass a custom path before running).",
+    "working_dir": null,
+    "last_status": "never-run",
+    "last_run_at": null,
+    "history": []
+  },
+  {
+    "id": "b6e5c590-5f43-4c5e-9ca5-0d942b5d95d0",
+    "label": "Ops workflow harness",
+    "command": "python scripts/workflow_harness.py --notes \"Ops Deck request\" --goal-milestone \"Ops workflow harness\" --goal-summary \"Scripted release + docs harness run from Ops Deck\" --goal-artifacts \"`scripts/workflow_harness.py`, `docs/AGENT_OPERATIONS.md`\" --timeline-json data/logs/workflow_harness/latest.json --timeline-jsonl data/logs/workflow_harness/history.jsonl",
+    "created_at": "2025-11-20T05:15:00.000000+00:00",
+    "added_by": null,
+    "tags": [
+      "ops",
+      "release",
+      "automation"
+    ],
+    "description": "Run the composite release → docs → change record → rebrand workflow without shell access (dry-run release, doc updates, change record scaffolding). Emits machine-readable timeline logs under data/logs/workflow_harness/, logs to data/logs/release.log, and appends a tail-log entry for Ops Deck telemetry.",
+    "working_dir": null,
+    "last_status": "never-run",
+    "last_run_at": null,
+    "history": []
+  },
+  {
+    "id": "e84c2ba4-4318-46a3-9e95-3f2be1f7c112",
+    "label": "Release log · inspect",
+    "command": "python scripts/release_log_cli.py --limit 10 --show-timeline",
+    "created_at": "2025-11-21T00:00:00.000000+00:00",
+    "added_by": null,
+    "tags": [
+      "release",
+      "log",
+      "ops"
+    ],
+    "description": "Headless reader for data/logs/release.log with filters and timeline output. Use --json for MCP-friendly automation or add --status failed to focus on bad runs.",
     "working_dir": null,
     "last_status": "never-run",
     "last_run_at": null,

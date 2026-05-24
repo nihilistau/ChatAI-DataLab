@@ -13,13 +13,13 @@ try {
 
     if (-not $SkipBackend) {
         Write-Host "[release] Running backend tests" -ForegroundColor Cyan
-        pip install -r playground/backend/requirements.txt
-        pytest playground/backend/tests -q
+        pip install -r relay/backend/requirements.txt
+        pytest relay/backend/tests -q
     }
 
     if ($needsNotebookDeps) {
-        Write-Host "[release] Installing Kitchen notebook dependencies" -ForegroundColor Cyan
-        pip install -r kitchen/requirements.txt
+        Write-Host "[release] Installing Workshop notebook dependencies" -ForegroundColor Cyan
+        pip install -r workshop/requirements.txt
     }
 
     if (-not $SkipTelemetry) {
@@ -31,7 +31,7 @@ try {
             throw "Search telemetry ingestion failed with exit code $LASTEXITCODE"
         }
 
-        $papermillOutputDir = "kitchen/notebooks/_papermill"
+        $papermillOutputDir = "workshop/notebooks/_papermill"
         if (-not (Test-Path $papermillOutputDir)) {
             New-Item -ItemType Directory -Path $papermillOutputDir -Force | Out-Null
         }
@@ -40,7 +40,7 @@ try {
 
         Write-Host "[release] Running Papermill snapshot -> $outputNotebook" -ForegroundColor Cyan
         python -m papermill `
-            kitchen/notebooks/search_telemetry.ipynb `
+            workshop/notebooks/search_telemetry.ipynb `
             $outputNotebook `
             -p SEARCH_LEDGER_PATH data/search_telemetry.json `
             -p TELEMETRY_LOG_PATH logs/search-history.jsonl
@@ -55,15 +55,15 @@ try {
     }
     if (-not $SkipFrontend) {
         Write-Host "[release] Running frontend checks" -ForegroundColor Cyan
-        Push-Location playground/frontend
+        Push-Location relay/frontend
         try {
             npm install
             npm run lint
             npm run test
-            npm run test:playground
+            npm run test:relay
             npm run build
             npm run storybook:build
-            npm run storybook:playground
+            npm run storybook:relay
         } finally { Pop-Location }
     }
 }

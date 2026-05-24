@@ -7,8 +7,8 @@ Usage examples::
     python scripts/project_integrity.py init --reason "fresh clone"
     python scripts/project_integrity.py status --tags backend
     python scripts/project_integrity.py checkpoint --tag release --reason "0.4.0"
-    python scripts/project_integrity.py verify playground/backend/app/models.py
-    python scripts/project_integrity.py repair playground/backend/app/models.py --checkpoint latest
+    python scripts/project_integrity.py verify relay/backend/app/models.py
+    python scripts/project_integrity.py repair relay/backend/app/models.py --checkpoint latest
     python scripts/project_integrity.py export backups/release.zip --checkpoint 0007
 
 The tool tracks hashes for every file (respecting inclusion/exclusion globs),
@@ -27,12 +27,17 @@ import subprocess
 import sys
 import textwrap
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable, Iterator, Mapping
+from typing import Any, Iterable, Iterator, Mapping
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts.ops_telemetry import telemetry_span
+
 CONFIG_DIR = ROOT / "configs"
 POLICY_FILE = CONFIG_DIR / "integrity_policy.json"
 TAGS_FILE = CONFIG_DIR / "tags.json"
@@ -60,6 +65,38 @@ DEFAULT_POLICY = {
     "default_tags": ["integrity"],
     "default_milestone": "rolling",
 }
+
+TELEMETRY_FLAG_NAMES = {
+    "skip_tail_log",
+    "skip_release_log",
+    "tail_log_source",
+    "release_log_kind",
+    "release_log_path",
+}
+
+
+def _relativize(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def _coerce_arg_value(value: Any) -> Any:
+    if isinstance(value, Path):
+        return _relativize(value)
+    if isinstance(value, list):
+        return [_coerce_arg_value(item) for item in value]
+    return value
+
+
+def _sanitize_args(args: argparse.Namespace) -> dict[str, Any]:
+    payload: dict[str, Any] = {}
+    for key, value in vars(args).items():
+        if key in TELEMETRY_FLAG_NAMES:
+            continue
+        payload[key] = _coerce_arg_value(value)
+    return payload
 
 
 @dataclass
@@ -253,7 +290,7 @@ class IntegrityManager:
                 "tag": tag,
                 "milestone": milestone or self.policy.get("default_milestone"),
                 "reason": reason,
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
             },
             "files": manifest["files"],
         }
@@ -290,7 +327,7 @@ class IntegrityManager:
     def cmd_init(self, *, reason: str | None) -> None:
         manifest = {
             "meta": {
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
                 "policy": self.policy,
                 "reason": reason,
             },
@@ -302,14 +339,23 @@ class IntegrityManager:
         self.write_checkpoint(checkpoint_id, manifest, tag=None, milestone=None, reason=reason)
         print(f"Initialized manifest with checkpoint {checkpoint_id}")
 
-    def cmd_status(self, *, tags: list[str] | None, baseline: str | None) -> None:
+    def cmd_status(self, *, tags: list[str] | None, baseline: str | None, as_json: bool = False) -> dict[str, Any]:
         if baseline:
             manifest = self.resolve_baseline_manifest(baseline)
         else:
             manifest = self.load_manifest()
         if not manifest["files"]:
-            print("Manifest empty. Run init first.")
-            return
+            payload = {
+                "summary": {"added": 0, "deleted": 0, "modified": 0},
+                "added": [],
+                "deleted": [],
+                "modified": [],
+                "baseline": baseline or "local",
+                "tags": tags or [],
+                "empty": True,
+            }
+            print(json.dumps(payload if as_json else payload["summary"], indent=2))
+            return payload
         current = {rec.path: rec for rec in self.scan_files().values()}
         added = sorted(set(current) - set(manifest["files"]))
         deleted = sorted(set(manifest["files"]) - set(current))
@@ -328,13 +374,26 @@ class IntegrityManager:
             "deleted": len(deleted),
             "modified": len(modified),
         }
-        print(json.dumps(summary, indent=2))
-        for label, paths in ("added", added), ("deleted", deleted), ("modified", modified):
-            if not paths:
-                continue
-            print(f"\n{label.upper()} ({len(paths)}):")
-            for path in paths:
-                print(f"  - {path}")
+        payload = {
+            "summary": summary,
+            "added": added,
+            "deleted": deleted,
+            "modified": modified,
+            "baseline": baseline or "local",
+            "tags": tags or [],
+            "empty": False,
+        }
+        if as_json:
+            print(json.dumps(payload, indent=2))
+        else:
+            print(json.dumps(summary, indent=2))
+            for label, paths in ("added", added), ("deleted", deleted), ("modified", modified):
+                if not paths:
+                    continue
+                print(f"\n{label.upper()} ({len(paths)}):")
+                for path in paths:
+                    print(f"  - {path}")
+        return payload
 
     def cmd_checkpoint(self, *, tag: str | None, milestone: str | None, reason: str | None) -> None:
         manifest = self.load_manifest()
@@ -346,7 +405,7 @@ class IntegrityManager:
         manifest["meta"].update(
             {
                 "checkpoint_id": checkpoint_id,
-                "updated_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
                 "reason": reason,
                 "tag": tag,
                 "milestone": milestone or self.policy.get("default_milestone"),
@@ -356,7 +415,7 @@ class IntegrityManager:
         self.write_checkpoint(checkpoint_id, manifest, tag=tag, milestone=milestone, reason=reason)
         print(f"Checkpoint {checkpoint_id} created")
 
-    def cmd_verify(self, paths: list[str]) -> None:
+    def cmd_verify(self, paths: list[str]) -> int:
         manifest = self.load_manifest()
         if not manifest["files"]:
             raise RuntimeError("Manifest empty. Run init first.")
@@ -382,8 +441,7 @@ class IntegrityManager:
             else:
                 print(f"[DIFF] {rel_str}\n  expected={expected_hash}\n  actual={current_hash}")
                 overall_ok = False
-        if not overall_ok:
-            sys.exit(2)
+        return 0 if overall_ok else 2
 
     def cmd_repair(self, targets: list[str] | None, *, checkpoint: str | None, all_files: bool) -> None:
         checkpoint_id = self._resolve_checkpoint_id(checkpoint)
@@ -437,12 +495,17 @@ def build_parser() -> argparse.ArgumentParser:
               python scripts/project_integrity.py init --reason "fresh clone"
               python scripts/project_integrity.py status --tags backend,ui
               python scripts/project_integrity.py checkpoint --tag release --reason "0.5.0"
-              python scripts/project_integrity.py verify playground/backend/app/models.py
-              python scripts/project_integrity.py repair playground/backend/app/models.py --checkpoint latest
+              python scripts/project_integrity.py verify relay/backend/app/models.py
+              python scripts/project_integrity.py repair relay/backend/app/models.py --checkpoint latest
               python scripts/project_integrity.py export backups/release.zip --checkpoint 0007
             """
         ),
     )
+    parser.add_argument("--skip-tail-log", action="store_true", help="Disable tail log emission")
+    parser.add_argument("--skip-release-log", action="store_true", help="Disable release log emission")
+    parser.add_argument("--tail-log-source", default="project-integrity", help="Tail log source label")
+    parser.add_argument("--release-log-kind", default="project_integrity", help="Release log kind label")
+    parser.add_argument("--release-log-path", default=None, help="Optional release log override path")
     sub = parser.add_subparsers(dest="command", required=True)
 
     init_cmd = sub.add_parser("init", help="Create the initial manifest + checkpoint")
@@ -455,6 +518,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Checkpoint id or tag to diff against instead of the local manifest",
     )
+    status_cmd.add_argument("--json", action="store_true", help="Emit JSON diff summary only")
 
     checkpoint_cmd = sub.add_parser("checkpoint", help="Create a new checkpoint + backup")
     checkpoint_cmd.add_argument("--tag", default=None)
@@ -476,27 +540,95 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str] | None = None) -> None:
+
+def _run_command(manager: IntegrityManager, args: argparse.Namespace) -> tuple[int, dict[str, Any] | None]:
+    command = args.command
+    if command == "init":
+        manager.cmd_init(reason=args.reason)
+        return 0, {"reason": args.reason}
+    if command == "status":
+        tags = [part.strip() for part in (args.tags or "").split(",") if part.strip()]
+        payload = manager.cmd_status(tags=tags or None, baseline=args.baseline, as_json=getattr(args, "json", False))
+        return 0, {
+            "summary": payload.get("summary"),
+            "baseline": payload.get("baseline"),
+            "tags": payload.get("tags"),
+            "empty": payload.get("empty"),
+        }
+    if command == "checkpoint":
+        manager.cmd_checkpoint(tag=args.tag, milestone=args.milestone, reason=args.reason)
+        return 0, {"tag": args.tag, "milestone": args.milestone}
+    if command == "verify":
+        exit_code = manager.cmd_verify(args.paths)
+        return exit_code, {"paths": args.paths, "count": len(args.paths)}
+    if command == "repair":
+        manager.cmd_repair(args.paths, checkpoint=args.checkpoint, all_files=args.all)
+        return 0, {"checkpoint": args.checkpoint or "latest", "all": args.all, "paths": args.paths}
+    if command == "export":
+        manager.cmd_export(output=args.output, checkpoint=args.checkpoint)
+        return 0, {
+            "output": _relativize(args.output),
+            "checkpoint": args.checkpoint or "latest",
+        }
+    raise ValueError(f"Unknown command {command}")
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     manager = IntegrityManager()
 
-    if args.command == "init":
-        manager.cmd_init(reason=args.reason)
-    elif args.command == "status":
-        tags = args.tags.split(",") if args.tags else None
-        manager.cmd_status(tags=tags, baseline=args.baseline)
-    elif args.command == "checkpoint":
-        manager.cmd_checkpoint(tag=args.tag, milestone=args.milestone, reason=args.reason)
-    elif args.command == "verify":
-        manager.cmd_verify(args.paths)
-    elif args.command == "repair":
-        manager.cmd_repair(args.paths, checkpoint=args.checkpoint, all_files=args.all)
-    elif args.command == "export":
-        manager.cmd_export(output=Path(args.output), checkpoint=args.checkpoint)
-    else:
-        parser.error("Unknown command")
+    if args.command == "export":
+        args.output = Path(args.output).expanduser().resolve()
+
+    sanitized_args = _sanitize_args(args)
+    status_holder: dict[str, int | None] = {"exit_code": None}
+
+    def _tail_message() -> str:
+        exit_code = status_holder["exit_code"]
+        if exit_code is None:
+            return f"project_integrity {args.command} pending"
+        state = "ok" if exit_code == 0 else f"exit={exit_code}"
+        return f"project_integrity {args.command} {state}"
+
+    release_entry = {
+        "kind": "project_integrity",
+        "command": args.command,
+        "args": sanitized_args,
+    }
+    release_details = {"args": sanitized_args}
+
+    with telemetry_span(
+        f"project-integrity-{args.command}",
+        component="project_integrity",
+        tail_source=args.tail_log_source,
+        tail_message=_tail_message,
+        release_kind=args.release_log_kind,
+        release_log_path=args.release_log_path,
+        release_summary=f"project_integrity {args.command}",
+        release_details=release_details,
+        release_entry=release_entry,
+        skip_tail_log=args.skip_tail_log,
+        skip_release_log=args.skip_release_log,
+    ) as recorder:
+        try:
+            exit_code, step_details = _run_command(manager, args)
+        except Exception as exc:
+            status_holder["exit_code"] = 1
+            recorder.record_step(args.command, status="failed", details={"error": str(exc)})
+            release_entry["error"] = str(exc)
+            recorder.set_metadata(command=args.command, status="failed")
+            raise
+        status_holder["exit_code"] = exit_code
+        recorder.record_step(
+            args.command,
+            status="ok" if exit_code == 0 else "failed",
+            details=step_details or release_details["args"],
+        )
+        recorder.set_metadata(command=args.command, exit_code=exit_code)
+        release_entry["exit_code"] = exit_code
+        return exit_code
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

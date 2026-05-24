@@ -15,15 +15,15 @@ This document centralizes the canonical paths, syntax conventions, and escape ru
 | `$global:LabBackendEnv` | Backend virtual environment | `D:\Files\Code 3\ChatAI-DataLab\chatai\backend\.venv` |
 | `$global:LabFrontend` | Vite/React frontend | `D:\Files\Code 3\ChatAI-DataLab\chatai\frontend` |
 | `$global:LabFrontendEnv` | Node modules cache | `D:\Files\Code 3\ChatAI-DataLab\chatai\frontend\node_modules` |
-| `$global:LabKitchen` | Notebook workspace | `D:\Files\Code 3\ChatAI-DataLab\kitchen` |
-| `$global:LabKitchenEnv` | Kitchen virtual environment | `D:\Files\Code 3\ChatAI-DataLab\kitchen\.venv` |
-| `$global:LabPyKernel` | Primary Python kernel executable | `D:\Files\Code 3\ChatAI-DataLab\kitchen\.venv\Scripts\python.exe` |
-| `Env:LAB_ROOT` | Exported for Python/Node tooling (`kitchen.lab_paths`) | `D:\Files\Code 3\ChatAI-DataLab` |
-| `Env:LAB_KITCHEN` | Workspace hint for CLI + Papermill jobs | `D:\Files\Code 3\ChatAI-DataLab\kitchen` |
-| `Env:DATABASE_PROVIDER` | Active datastore provider consumed by backend/Kitchen/CLI | `sqlite` (default) or `json`/`cosmos` as configured |
+| `$global:LabWorkshop` | Notebook workspace | `D:\Files\Code 3\ChatAI-DataLab\workshop` |
+| `$global:LabWorkshopEnv` | Workshop virtual environment | `D:\Files\Code 3\ChatAI-DataLab\workshop\.venv` |
+| `$global:LabPyKernel` | Primary Python kernel executable | `D:\Files\Code 3\ChatAI-DataLab\workshop\.venv\Scripts\python.exe` |
+| `Env:LAB_ROOT` | Exported for Python/Node tooling (`workshop.lab_paths`) | `D:\Files\Code 3\ChatAI-DataLab` |
+| `Env:LAB_WORKSHOP` | Workspace hint for CLI + Papermill jobs | `D:\Files\Code 3\ChatAI-DataLab\workshop` |
+| `Env:DATABASE_PROVIDER` | Active datastore provider consumed by backend/Workshop/CLI | `sqlite` (default) or `json`/`cosmos` as configured |
 | `Env:DATABASE_PATH` | File-backed datastore path when the provider requires one | `D:\Files\Code 3\ChatAI-DataLab\data\interactions.db` when `DATABASE_PROVIDER=sqlite`; otherwise `auto` |
 
-> When `DATABASE_PATH=auto`, helpers such as `python scripts/playground_store.py summary` resolve the appropriate location (JSON snapshots, Cosmos endpoints, etc.) without additional configuration. Override the path only for intentional file-backed test runs.
+> When `DATABASE_PATH=auto`, helpers such as `python scripts/relay_store.py summary` resolve the appropriate location (JSON snapshots, Cosmos endpoints, etc.) without additional configuration. Override the path only for intentional file-backed test runs.
 
 These values are computed dynamically at runtime, so the same script works if the repo moves to a different drive letter—as long as the directory structure is preserved.
 
@@ -32,10 +32,10 @@ These values are computed dynamically at runtime, so the same script works if th
 | Task | PowerShell Command | Notes |
 | --- | --- | --- |
 | Activate backend venv | `. "${global:LabBackendEnv}\Scripts\Activate.ps1"` | Use double quotes because the path contains spaces. Call `deactivate` when finished. |
-| Activate Kitchen venv | `. "${global:LabKitchenEnv}\Scripts\Activate.ps1"` | Provides the `ipykernel` runtime for notebooks. |
+| Activate Workshop venv | `. "${global:LabWorkshopEnv}\Scripts\Activate.ps1"` | Provides the `ipykernel` runtime for notebooks. |
 | Start backend API | `Start-LabJob -Name backend -Force` | Requires `LabControl.psm1`. Automatically exports `PYTHONPATH`. |
 | Start frontend dev server | `Start-LabJob -Name frontend -Force` | Uses the repo-local Node toolchain installed via `npm install`. |
-| Start Kitchen Jupyter | `Start-LabJob -Name kitchen -Force` | Launches `jupyter lab --no-browser`. |
+| Start Workshop Jupyter | `Start-LabJob -Name workshop -Force` | Launches `jupyter lab --no-browser`. |
 | Validate notebooks | `& $global:LabPyKernel scripts\tools\validate_notebooks.py` | The bootstrap script wraps this inside `Invoke-LabSyntaxScan`. |
 | Compile backend sources | `& $global:LabPyKernel -m compileall chatai\backend` | Catches Python syntax errors before runtime. |
 
@@ -56,8 +56,8 @@ pwsh -ExecutionPolicy Bypass -File .\scripts\lab-bootstrap.ps1
 
 The scan performs the following:
 
-1. Parses every notebook under `kitchen/notebooks` (plus the archived `legacy/datalab` copies for historical reference) as JSON to catch malformed cells.
-2. Runs `compileall` against `playground/backend`, `kitchen/scripts`, and shared utility modules to surface Python syntax errors early.
+1. Parses every notebook under `workshop/notebooks` (plus the archived `legacy/datalab` copies for historical reference) as JSON to catch malformed cells.
+2. Runs `compileall` against `relay/backend`, `workshop/scripts`, and shared utility modules to surface Python syntax errors early.
 3. Confirms that `package.json`, `tsconfig.json`, and `vite.config.ts` are loadable JSON/TypeScript config files with valid escape sequences.
 4. Verifies that all global paths listed above exist before LabControl starts any jobs.
 

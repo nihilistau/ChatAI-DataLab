@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-"""Papermill smoke tests for Kitchen notebooks."""
+"""Papermill smoke tests for Workshop notebooks."""
 
-# @tag: kitchen,tests,notebooks
+# @tag: workshop,tests,notebooks
 
 import json
 from pathlib import Path
@@ -12,14 +12,14 @@ import papermill as pm
 import pytest
 
 from tests.utils.notebooks import normalize_notebook
-from kitchen.scripts import search_telemetry
+from workshop.scripts import search_telemetry
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:datetime\\.datetime\\.utcnow\\(\\) is deprecated.*:DeprecationWarning:papermill.*",
     "ignore:Cell is missing an id field.*:nbformat.validator.MissingIDFieldWarning",
 )
 
-NOTEBOOK_DIR = Path(__file__).resolve().parents[1] / "kitchen" / "notebooks"
+NOTEBOOK_DIR = Path(__file__).resolve().parents[1] / "workshop" / "notebooks"
 OUTPUT_DIR = NOTEBOOK_DIR / "_papermill"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -108,8 +108,8 @@ def _create_sample_search_db(db_path: Path) -> None:
     [
         "quickstart.ipynb",
         "hypothesis_control.ipynb",
-        "control_center_playground.ipynb",
-        "elements_playground.ipynb",
+        "control_center_relay.ipynb",
+        "elements_relay.ipynb",
         "elements_reporting.ipynb",
         "search_telemetry.ipynb",
     ],

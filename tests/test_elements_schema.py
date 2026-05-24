@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from kitchen.elements.schema import (
+from workshop.elements.schema import (
 	ELEMENT_ID_PATTERN,
 	ElementDefinition,
 	ElementsCatalog,

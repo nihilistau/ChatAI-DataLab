@@ -1,4 +1,4 @@
-# ChatAI · Playground manifest samples
+# ChatAI · Relay manifest samples
 
 Use these payloads to test the `scripts/manifest_validator.py` CLI and any MCP agents that ingest Control Center manifests.
 
@@ -14,4 +14,4 @@ To validate every manifest (and fail the run if any file is invalid):
 python scripts/manifest_validator.py manifests --pattern "*.json"
 ```
 
-You can copy this folder when drafting new Kitchen manifests so reviewers can lint the payloads locally before pushing to the Ops control plane.
+You can copy this folder when drafting new Workshop manifests so reviewers can lint the payloads locally before pushing to the Ops control plane.

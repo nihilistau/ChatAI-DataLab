@@ -1,4 +1,4 @@
-"""Ensure the Kitchen namespace stands alone while legacy notebooks stay archived."""
+"""Ensure the Workshop namespace stands alone while legacy notebooks stay archived."""
 
 from __future__ import annotations
 
@@ -6,35 +6,35 @@ import importlib
 import importlib.util
 from pathlib import Path
 
-import kitchen
+import workshop
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-LEGACY_DATALAB = REPO_ROOT / "legacy" / "datalab"
+LEGACY_ARCHIVES = REPO_ROOT / "legacy" / "archives"
 
 
-def test_legacy_datalab_is_archived_only():
-    """`legacy/datalab` should exist for historical notebook reference but not import."""
+def test_legacy_archives_are_read_only():
+    """`legacy/archives` should exist for historical notebook reference but not import."""
 
-    assert LEGACY_DATALAB.exists(), "legacy/datalab should remain as read-only archives"
+    assert LEGACY_ARCHIVES.exists(), "legacy/archives should remain as read-only archives"
     assert not importlib.util.find_spec("datalab"), "datalab package must be fully removed"
 
 
-def test_kitchen_public_surface_remains_intact():
+def test_workshop_public_surface_remains_intact():
     """Spot-check a few helpers so the active namespace keeps working."""
 
-    assert callable(kitchen.get_lab_root)
-    assert callable(kitchen.data_path)
-    lab_root = kitchen.get_lab_root()
-    assert (Path(lab_root) / "kitchen").exists()
+    assert callable(workshop.get_lab_root)
+    assert callable(workshop.data_path)
+    lab_root = workshop.get_lab_root()
+    assert (Path(lab_root) / "workshop").exists()
 
 
-def test_kitchen_modules_still_importable():
-    """Importing Kitchen submodules must continue to work even without legacy shims."""
+def test_workshop_modules_still_importable():
+    """Importing Workshop submodules must continue to work even without legacy shims."""
 
-    kitchen_diag = importlib.import_module("kitchen.diagnostics")
-    kitchen_lab_paths = importlib.import_module("kitchen.lab_paths")
-    kitchen_widgets = importlib.import_module("kitchen.widgets")
+    workshop_diag = importlib.import_module("workshop.diagnostics")
+    workshop_lab_paths = importlib.import_module("workshop.lab_paths")
+    workshop_widgets = importlib.import_module("workshop.widgets")
 
-    assert hasattr(kitchen_diag, "append_diagnostic_record")
-    assert hasattr(kitchen_lab_paths, "data_path")
-    assert hasattr(kitchen_widgets, "WidgetSpec")
+    assert hasattr(workshop_diag, "append_diagnostic_record")
+    assert hasattr(workshop_lab_paths, "data_path")
+    assert hasattr(workshop_widgets, "WidgetSpec")

@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from kitchen.manifests import ManifestValidationReport, validate_manifest_payload
+from workshop.manifests import ManifestValidationReport, validate_manifest_payload
 from scripts import manifest_validator
 
 
@@ -13,12 +13,12 @@ def _manifest_record() -> dict:
     return {
         "id": "demo-tenant/welcome-control@3",
         "tenant": "demo-tenant",
-        "playground": "welcome-control",
+        "relay": "welcome-control",
         "revision": 3,
         "revision_label": "ops-demo",
         "cookbook": "Welcome Cookbook",
-        "recipe": "control_center_playground",
-        "author": "Ops Kitchen",
+        "recipe": "control_center_relay",
+        "author": "Ops Workshop",
         "notes": "Story manifest",
         "checksum": "e3c1c7f0f4ad96cf9a4df9fd6f8a93b1",
         "created_at": now,
@@ -55,7 +55,7 @@ def test_validate_manifest_record_success() -> None:
     assert report.actions == 1
     assert report.metadata_keys == ["hero"]
     assert report.tenant == "demo-tenant"
-    assert report.playground == "welcome-control"
+    assert report.relay == "welcome-control"
 
 
 def test_validate_manifest_body_only() -> None:

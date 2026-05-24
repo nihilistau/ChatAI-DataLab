@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from kitchen.telemetry import search_ledger
+from workshop.telemetry import search_ledger
 
 try:  # pragma: no cover - optional dependency
     import pyarrow.parquet as pq

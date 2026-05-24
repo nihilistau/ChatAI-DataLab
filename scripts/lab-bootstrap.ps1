@@ -2,9 +2,9 @@
 <#
         Lab bootstrapper that:
             1. Establishes repo-wide global variables for key paths and interpreters.
-            2. Performs lightweight "deep scan" validation of notebooks, backend, frontend, and Kitchen assets.
+            2. Performs lightweight "deep scan" validation of notebooks, backend, frontend, and Workshop assets.
             3. Activates virtual environments long enough to confirm they are healthy.
-            4. Imports LabControl, displays the dashboard, and launches backend/frontend/kitchen jobs.
+            4. Imports LabControl, displays the dashboard, and launches backend/frontend/workshop jobs.
 
     Usage:
         pwsh -ExecutionPolicy Bypass -File .\scripts\lab-bootstrap.ps1
@@ -79,18 +79,18 @@ function Invoke-LabSyntaxScan {
         }
     } finally { Pop-Location }
 
-    Write-LabInfo "[scan] Compiling Kitchen scripts..."
-    $kitchenInterpreter = if ($IsWindows) {
-        Join-Path $global:LabKitchenEnv "Scripts\python.exe"
+    Write-LabInfo "[scan] Compiling Workshop scripts..."
+    $workshopInterpreter = if ($IsWindows) {
+        Join-Path $global:LabWorkshopEnv "Scripts\python.exe"
     } else {
-        Join-Path $global:LabKitchenEnv "bin/python"
+        Join-Path $global:LabWorkshopEnv "bin/python"
     }
-    $labPy = Get-LabPythonCandidate -CandidatePaths @($global:LabPyKernel, $kitchenInterpreter)
-    Push-Location $global:LabKitchen
+    $labPy = Get-LabPythonCandidate -CandidatePaths @($global:LabPyKernel, $workshopInterpreter)
+    Push-Location $global:LabWorkshop
     try {
         & $labPy -m compileall -q scripts
         if ($LASTEXITCODE -ne 0) {
-            throw "python compileall failed for kitchen/scripts"
+            throw "python compileall failed for workshop/scripts"
         }
     } finally { Pop-Location }
 
@@ -147,13 +147,13 @@ $global:LabBackend = Join-Path $global:LabRoot "chatai\backend"
 $global:LabBackendEnv = Join-Path $global:LabBackend ".venv"
 $global:LabFrontend = Join-Path $global:LabRoot "chatai\frontend"
 $global:LabFrontendEnv = Join-Path $global:LabFrontend "node_modules"
-$global:LabKitchen = Join-Path $global:LabRoot "kitchen"
-$global:LabNotebookRoot = Join-Path $global:LabKitchen "notebooks"
-$global:LabKitchenEnv = Join-Path $global:LabKitchen ".venv"
+$global:LabWorkshop = Join-Path $global:LabRoot "workshop"
+$global:LabNotebookRoot = Join-Path $global:LabWorkshop "notebooks"
+$global:LabWorkshopEnv = Join-Path $global:LabWorkshop ".venv"
 $global:LabPyKernel = if ($IsWindows) {
-    Join-Path $global:LabKitchenEnv "Scripts\python.exe"
+    Join-Path $global:LabWorkshopEnv "Scripts\python.exe"
 } else {
-    Join-Path $global:LabKitchenEnv "bin/python"
+    Join-Path $global:LabWorkshopEnv "bin/python"
 }
 $global:py_kernal = $global:LabPyKernel  # user-requested alias
 
@@ -161,7 +161,7 @@ $global:py_kernal = $global:LabPyKernel  # user-requested alias
 Set-Item -Path Env:LAB_ROOT -Value $global:LabRoot
 Set-Item -Path Env:LAB_BACKEND -Value $global:LabBackend
 Set-Item -Path Env:LAB_FRONTEND -Value $global:LabFrontend
-Set-Item -Path Env:LAB_KITCHEN -Value $global:LabKitchen
+Set-Item -Path Env:LAB_WORKSHOP -Value $global:LabWorkshop
 Set-Item -Path Env:LAB_PY_KERNEL -Value $global:LabPyKernel
 Set-Variable -Name PShell -Value $global:PShell -Scope Global -Force
 
@@ -181,23 +181,23 @@ Assert-LabPath -Label "LabControl module" -Path (Join-Path $global:PShell "LabCo
 Assert-LabPath -Label "scripts folder" -Path $global:LabScripts
 Assert-LabPath -Label "backend" -Path $global:LabBackend
 Assert-LabPath -Label "frontend" -Path $global:LabFrontend
-Assert-LabPath -Label "kitchen" -Path $global:LabKitchen
+Assert-LabPath -Label "workshop" -Path $global:LabWorkshop
 
 if (-not $SkipScan) {
     Invoke-LabSyntaxScan
 }
 
 Initialize-LabVirtualEnv -EnvPath $global:LabBackendEnv -Label "backend"
-Initialize-LabVirtualEnv -EnvPath $global:LabKitchenEnv -Label "kitchen"
+Initialize-LabVirtualEnv -EnvPath $global:LabWorkshopEnv -Label "workshop"
 
 Import-Module (Join-Path $global:PShell "LabControl.psm1") -Force
 Invoke-LabControlCenter
 
 if (-not $NoLaunch) {
-    Write-LabInfo "[jobs] Starting backend/front/kitchen via LabControl..." ([ConsoleColor]::Green)
+    Write-LabInfo "[jobs] Starting backend/front/workshop via LabControl..." ([ConsoleColor]::Green)
     Start-LabJob -Name backend -Force | Out-Null
     Start-LabJob -Name frontend -Force | Out-Null
-    Start-LabJob -Name kitchen -Force | Out-Null
+    Start-LabJob -Name workshop -Force | Out-Null
     Show-LabJobs
 }
 

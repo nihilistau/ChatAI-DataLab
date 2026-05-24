@@ -10,7 +10,7 @@ $script:LabControlState["BackupDir"] = Join-Path $script:LabControlState.Root "b
 $script:LabControlState["Groups"] = @{
     backend      = Join-Path $script:LabControlState.Root "chatai\backend"
     frontend     = Join-Path $script:LabControlState.Root "chatai\frontend"
-    kitchen      = Join-Path $script:LabControlState.Root "kitchen"
+    workshop      = Join-Path $script:LabControlState.Root "workshop"
     scripts      = Join-Path $script:LabControlState.Root "scripts"
     controlplane = Join-Path $script:LabControlState.Root "controlplane"
     data         = Join-Path $script:LabControlState.Root "data"
@@ -197,20 +197,20 @@ function Get-LabJobDefinitions {
         Environment      = @{}
         Type             = "node"
     }
-    $defs.kitchen = [ordered]@{
-        Name             = "kitchen"
-        DisplayName      = "Kitchen Jupyter"
-        WorkingDirectory = Join-Path $root "kitchen"
+    $defs.workshop = [ordered]@{
+        Name             = "workshop"
+        DisplayName      = "Workshop Jupyter"
+        WorkingDirectory = Join-Path $root "workshop"
         Command          = "jupyter lab --ip=0.0.0.0 --no-browser"
         Environment      = @{}
         Type             = "python"
-        VirtualEnvPath   = Join-Path (Join-Path $root "kitchen") ".venv"
+        VirtualEnvPath   = Join-Path (Join-Path $root "workshop") ".venv"
     }
     $defs.tail = [ordered]@{
         Name             = "tail"
         DisplayName      = "Tail Log Monitor"
         WorkingDirectory = $root
-        Command          = "python scripts\playground_store.py tail-log --follow --limit 40"
+        Command          = "python scripts\relay_store.py tail-log --follow --limit 40"
         Environment      = @{}
         Type             = "utility"
     }
@@ -444,7 +444,7 @@ function Save-LabWorkspace {
     [CmdletBinding()]
     param(
     [string]$Destination = (Join-Path -Path $script:LabControlState.BackupDir -ChildPath ("workspace-{0}.zip" -f (Get-Date -Format "yyyyMMdd-HHmmss"))),
-        [string[]]$Include = @("chatai", "kitchen", "data", "scripts")
+        [string[]]$Include = @("chatai", "workshop", "data", "scripts")
     )
     $root = Get-LabRoot
     if (-not (Test-Path -Path (Split-Path $Destination -Parent))) {
@@ -482,11 +482,11 @@ function Restore-LabWorkspace {
 function Install-LabDependencies {
     [CmdletBinding()]
     param(
-        [ValidateSet("backend", "frontend", "kitchen", "all")]
+        [ValidateSet("backend", "frontend", "workshop", "all")]
         [string]$Target = "all"
     )
     $root = Get-LabRoot
-    $targets = if ($Target -eq "all") { @("backend", "frontend", "kitchen") } else { @($Target) }
+    $targets = if ($Target -eq "all") { @("backend", "frontend", "workshop") } else { @($Target) }
     $pythonCmd = Get-LabPythonCommand
     foreach ($item in $targets) {
         switch ($item) {
@@ -506,8 +506,8 @@ function Install-LabDependencies {
                     npm run build
                 } finally { Pop-Location }
             }
-            "kitchen" {
-                Push-Location (Join-Path $root "kitchen")
+            "workshop" {
+                Push-Location (Join-Path $root "workshop")
                 try {
                     & $pythonCmd -m venv .venv | Out-Null
                     $pipPath = Get-LabPipPath -ProjectPath (Get-Location).Path
@@ -529,7 +529,7 @@ function New-LabPackage {
     try {
         pytest
     } finally { Pop-Location }
-    Save-LabWorkspace -Destination $Output -Include @("chatai", "kitchen", "data") | Out-Null
+    Save-LabWorkspace -Destination $Output -Include @("chatai", "workshop", "data") | Out-Null
     Write-Host "Release package ready at $Output"
     return $Output
 }
@@ -538,7 +538,7 @@ function Invoke-LabControlCenter {
     [CmdletBinding()]
     param()
     $root = Get-LabRoot
-    Write-Host "ChatAI · Kitchen Control Center" -ForegroundColor Cyan
+    Write-Host "ChatAI · Workshop Control Center" -ForegroundColor Cyan
     Write-Host ("Root: {0}" -f $root)
     Write-Host "--- Jobs ---" -ForegroundColor DarkCyan
     Show-LabJobs
@@ -1344,21 +1344,21 @@ function Publish-LabRelease {
     }
 }
 
-$kitchenAliasMap = @{
-    'Kitchen-Job-Start'      = 'Start-LabJob'
-    'Kitchen-Job-Stop'       = 'Stop-LabJob'
-    'Kitchen-Job-Restart'    = 'Restart-LabJob'
-    'Kitchen-Job-StartAll'   = 'Start-AllLabJobs'
-    'Kitchen-Job-StopAll'    = 'Stop-AllLabJobs'
-    'Kitchen-Job-RestartAll' = 'Restart-AllLabJobs'
-    'Kitchen-Job-Show'       = 'Show-LabJobs'
-    'Kitchen-Job-Snapshot'   = 'Get-LabJobSnapshot'
-    'Kitchen-Job-Output'     = 'Receive-LabJobOutput'
-    'Kitchen-Job-Remove'     = 'Remove-LabJob'
+$workshopAliasMap = @{
+    'Workshop-Job-Start'      = 'Start-LabJob'
+    'Workshop-Job-Stop'       = 'Stop-LabJob'
+    'Workshop-Job-Restart'    = 'Restart-LabJob'
+    'Workshop-Job-StartAll'   = 'Start-AllLabJobs'
+    'Workshop-Job-StopAll'    = 'Stop-AllLabJobs'
+    'Workshop-Job-RestartAll' = 'Restart-AllLabJobs'
+    'Workshop-Job-Show'       = 'Show-LabJobs'
+    'Workshop-Job-Snapshot'   = 'Get-LabJobSnapshot'
+    'Workshop-Job-Output'     = 'Receive-LabJobOutput'
+    'Workshop-Job-Remove'     = 'Remove-LabJob'
 }
 
-foreach ($alias in $kitchenAliasMap.GetEnumerator()) {
+foreach ($alias in $workshopAliasMap.GetEnumerator()) {
     Set-Alias -Name $alias.Key -Value $alias.Value -Scope Script
 }
 
-Export-ModuleMember -Function *-Lab* -Alias $kitchenAliasMap.Keys
+Export-ModuleMember -Function *-Lab* -Alias $workshopAliasMap.Keys

@@ -12,38 +12,38 @@ Use this checklist any time you prepare an internal drop or GitHub release. It c
 
 ```bash
 # Backend
-python -m pip install -r playground/backend/requirements.txt
-python -m pytest playground/backend/tests -q
+python -m pip install -r relay/backend/requirements.txt
+python -m pytest relay/backend/tests -q
 
 # Telemetry + notebooks
-python -m pip install -r kitchen/requirements.txt  # full Kitchen notebook deps
+python -m pip install -r workshop/requirements.txt  # full Workshop notebook deps
 python -m scripts.search_telemetry ingest --log-path logs/search-history.jsonl --output data/search_telemetry.json \
 	--runs-parquet data/search_telemetry-runs.parquet --daily-parquet data/search_telemetry-daily.parquet
-python -m papermill kitchen/notebooks/search_telemetry.ipynb kitchen/notebooks/_papermill/search_telemetry-release.ipynb \
+python -m papermill workshop/notebooks/search_telemetry.ipynb workshop/notebooks/_papermill/search_telemetry-release.ipynb \
 	-p SEARCH_LEDGER_PATH data/search_telemetry.json \
 	-p TELEMETRY_LOG_PATH logs/search-history.jsonl
 python -m pytest tests/test_notebooks.py -q
 
 # Frontend
-cd playground/frontend
+cd relay/frontend
 npm install
 npm run lint
 npm run test
-npm run test:playground
+npm run test:relay
 npm run build
 npm run storybook:build
-npm run storybook:playground
+npm run storybook:relay
 ```
 
 > `scripts/release_checklist.ps1` runs the telemetry ingest + Papermill snapshot automatically. Pass `-SkipTelemetry` when you need to bypass it temporarily (for example, when log files are unavailable).
 
 ## 3. Collect artifacts
 
-- [ ] Zip and attach `playground/frontend/dist/` (`control-center-dist.zip`).
-- [ ] Zip and attach `playground/frontend/storybook-static/` and `playground/frontend/storybook-static-playground/` (`storybook-static.zip`, `storybook-static-playground.zip`).
-- [ ] Copy the freshly executed notebooks from `kitchen/notebooks/_papermill/` (Search Telemetry, Ops Response Playbook, Widget Showcase) and link them in the release body.
+- [ ] Zip and attach `relay/frontend/dist/` (`control-center-dist.zip`).
+- [ ] Zip and attach `relay/frontend/storybook-static/` and `relay/frontend/storybook-static-relay/` (`storybook-static.zip`, `storybook-static-relay.zip`).
+- [ ] Copy the freshly executed notebooks from `workshop/notebooks/_papermill/` (Search Telemetry, Ops Response Playbook, Widget Showcase) and link them in the release body.
 - [ ] Mention the operator scripts added or updated in this release (`scripts/lab-bootstrap.ps1`, `scripts/release_checklist.ps1`, `scripts/lab-control.ps1`, etc.) so downstream users know which automation changed.
-- [ ] Capture screenshots/GIFs of the Playground UI or Storybook stories if visual changes were made.
+- [ ] Capture screenshots/GIFs of the Relay UI or Storybook stories if visual changes were made.
 
 ## 4. Git + GitHub hygiene
 

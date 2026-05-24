@@ -66,20 +66,20 @@ create_python_env() {
 }
 
 setup_backend() {
-	local path="$ROOT_DIR/playground/backend"
+	local path="$ROOT_DIR/relay/backend"
 	log "⚙️  Setting up backend in $path"
 	create_python_env "$path"
 }
 
 setup_frontend() {
-	local path="$ROOT_DIR/playground/frontend"
+	local path="$ROOT_DIR/relay/frontend"
 	log "🧱 Installing frontend dependencies"
 	(cd "$path" && npm install && npm run build)
 }
 
-setup_kitchen() {
-	local path="$ROOT_DIR/kitchen"
-	log "🧪 Setting up Kitchen"
+setup_workshop() {
+	local path="$ROOT_DIR/workshop"
+	log "🧪 Setting up Workshop"
 	create_python_env "$path"
 }
 
@@ -94,20 +94,20 @@ fetch_assets() {
 }
 
 main() {
-	log "🚀 Starting ChatAI · Kitchen setup"
+	log "🚀 Starting ChatAI · Workshop setup"
 	local pkg_mgr
 	pkg_mgr="$(detect_pkg_manager)"
 	install_system_packages "$pkg_mgr"
 	setup_backend
 	setup_frontend
-	setup_kitchen
+	setup_workshop
 	fetch_assets
 	log "✅ Setup complete"
 	cat <<'EOT'
 Next steps:
-	• Backend:   cd playground/backend && source .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000
-	• Frontend:  cd playground/frontend && npm run dev -- --host
-	• Kitchen:   cd kitchen && source .venv/bin/activate && jupyter lab --ip 0.0.0.0 --no-browser
+	• Backend:   cd relay/backend && source .venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8000
+	• Frontend:  cd relay/frontend && npm run dev -- --host
+	• Workshop:   cd workshop && source .venv/bin/activate && jupyter lab --ip 0.0.0.0 --no-browser
 EOT
 }
 

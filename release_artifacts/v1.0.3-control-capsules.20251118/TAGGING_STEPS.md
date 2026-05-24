@@ -6,7 +6,7 @@ git push origin v1.0.2-control-capsules.20251116
 `powershell
 cd "D:/Files/Code 3/ChatAI-DataLab"
 git status
-git tag -a v1.0.3-control-capsules.20251118 -m "Kitchen notebooks + Parquet artifacts"
+git tag -a v1.0.3-control-capsules.20251118 -m "Workshop notebooks + Parquet artifacts"
 git push origin main
 git push origin v1.0.3-control-capsules.20251118
 `
